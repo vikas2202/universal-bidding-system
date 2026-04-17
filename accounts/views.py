@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db import transaction
+from django.utils.http import url_has_allowed_host_and_scheme
 from .forms import RegistrationForm, LoginForm, UserProfileForm
 from .models import UserProfile, UserRating
 from auctions.models import Auction
@@ -37,8 +38,9 @@ def login_view(request):
             login(request, user)
             next_url = request.GET.get('next', '')
             messages.success(request, f"Welcome back, {user.username}!")
-            # Only redirect to safe relative URLs to prevent open redirect attacks
-            if next_url and next_url.startswith('/') and not next_url.startswith('//'):
+            if next_url and url_has_allowed_host_and_scheme(
+                url=next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+            ):
                 return redirect(next_url)
             return redirect('auctions:home')
     else:

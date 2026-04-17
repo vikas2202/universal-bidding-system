@@ -7,14 +7,22 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-6-_o+(_oi9dy*yp3ke%d&nv0krr0#(b)2t4z@$9j0=(#s9yf(z'
-)
+_secret_key = os.environ.get('DJANGO_SECRET_KEY')
+if not _secret_key:
+    if os.environ.get('DJANGO_DEBUG', 'False') == 'True':
+        # Development-only fallback — never used in production
+        _secret_key = 'django-insecure-dev-only-do-not-use-in-production'
+    else:
+        raise ValueError(
+            "DJANGO_SECRET_KEY environment variable is not set. "
+            "Set it to a long random string before running in production."
+        )
+SECRET_KEY = _secret_key
 
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',')
+_allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()] or (['localhost', '127.0.0.1'] if DEBUG else [])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
