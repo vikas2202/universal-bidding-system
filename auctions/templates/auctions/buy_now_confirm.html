@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load auction_extras %}
+{% block title %}Buy Now - BidHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Confirm Purchase</h5>
+                </div>
+                <div class="card-body">
+                    <p>Purchase <strong>{{ auction.item.title }}</strong> immediately for:</p>
+                    <div class="display-6 fw-bold text-primary text-center mb-3">{{ auction.buy_now_price|currency }}</div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning btn-lg w-100">
+                            <i class="bi bi-lightning me-1"></i>Confirm Purchase
+                        </button>
+                        <a href="{{ auction.get_absolute_url }}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

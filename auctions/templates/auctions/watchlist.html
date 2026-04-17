@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load auction_extras %}
+{% block title %}Watchlist - BidHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-bookmark me-2"></i>My Watchlist</h2>
+    {% if watched %}
+    <div class="row g-3">
+        {% for wl in watched %}
+        <div class="col-md-6 col-lg-4">
+            <div class="position-relative">
+                {% include "auctions/_auction_card.html" with auction=wl.auction %}
+                <div class="position-absolute top-0 end-0 m-2" style="z-index:10;">
+                    <a href="{% url 'auctions:remove_watchlist' wl.auction.pk %}"
+                       class="btn btn-sm btn-danger" onclick="return confirm('Remove from watchlist?')">
+                        <i class="bi bi-x"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-bookmark display-4 text-muted"></i>
+        <h5 class="mt-3">Your watchlist is empty</h5>
+        <a href="{% url 'auctions:list' %}" class="btn btn-primary">Browse Auctions</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

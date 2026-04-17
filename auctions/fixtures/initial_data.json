@@ -1,0 +1,12 @@
+[
+  {"model": "auctions.category", "pk": 1, "fields": {"name": "Electronics", "slug": "electronics", "description": "Computers, phones, gadgets and more", "icon": "bi-cpu"}},
+  {"model": "auctions.category", "pk": 2, "fields": {"name": "Vehicles", "slug": "vehicles", "description": "Cars, motorcycles, boats and more", "icon": "bi-car-front"}},
+  {"model": "auctions.category", "pk": 3, "fields": {"name": "Art", "slug": "art", "description": "Paintings, sculptures and fine art", "icon": "bi-palette"}},
+  {"model": "auctions.category", "pk": 4, "fields": {"name": "Collectibles", "slug": "collectibles", "description": "Rare and unique collector items", "icon": "bi-gem"}},
+  {"model": "auctions.category", "pk": 5, "fields": {"name": "Fashion", "slug": "fashion", "description": "Clothing, shoes and accessories", "icon": "bi-handbag"}},
+  {"model": "auctions.category", "pk": 6, "fields": {"name": "Sports", "slug": "sports", "description": "Sports equipment and memorabilia", "icon": "bi-trophy"}},
+  {"model": "auctions.category", "pk": 7, "fields": {"name": "Jewelry", "slug": "jewelry", "description": "Rings, necklaces, watches and more", "icon": "bi-stars"}},
+  {"model": "auctions.category", "pk": 8, "fields": {"name": "Real Estate", "slug": "real-estate", "description": "Properties and land", "icon": "bi-house"}},
+  {"model": "auctions.category", "pk": 9, "fields": {"name": "Books", "slug": "books", "description": "Books, manuscripts and publications", "icon": "bi-book"}},
+  {"model": "auctions.category", "pk": 10, "fields": {"name": "Other", "slug": "other", "description": "Miscellaneous items", "icon": "bi-box"}}
+]

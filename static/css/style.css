@@ -1,0 +1,188 @@
+/* BidHub Custom Styles */
+
+/* Hero */
+.hero-section {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a4bbf 100%);
+}
+
+.stat-card {
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Auction Cards */
+.auction-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.auction-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+}
+
+.auction-card .card-img-top,
+.auction-card-img {
+    height: 200px;
+    object-fit: cover;
+    background: #f8f9fa;
+}
+
+/* Countdown Timer */
+.countdown-timer, .countdown-display {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+}
+
+.countdown-display {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.countdown-urgent {
+    color: #dc3545 !important;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Section Titles */
+.section-title {
+    font-weight: 700;
+    color: #1a1a2e;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: #0d6efd;
+    border-radius: 2px;
+}
+
+/* Bid Panel */
+.bid-panel {
+    border-radius: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Category Cards */
+.category-card {
+    transition: all 0.2s;
+    background: #fff;
+}
+
+.category-card:hover {
+    background: #e7f1ff;
+    border-color: #0d6efd !important;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+/* Hover shadow utility */
+.hover-shadow {
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+/* Tables */
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Status badges */
+.badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+/* Notifications badge */
+.notification-badge {
+    min-width: 16px;
+    height: 16px;
+    line-height: 1;
+    padding: 3px 5px;
+}
+
+/* Forms */
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* Gallery images */
+.gallery-img {
+    transition: opacity 0.2s, border-color 0.2s;
+    border: 2px solid transparent;
+}
+
+.gallery-img:hover {
+    opacity: 0.8;
+    border-color: #0d6efd !important;
+}
+
+/* Toast notifications */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.bid-toast {
+    min-width: 300px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Main image */
+.main-image {
+    max-height: 400px;
+    object-fit: contain;
+    width: 100%;
+    background: #f8f9fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-section h1 { font-size: 1.75rem; }
+    .auction-card-img { height: 160px; }
+}
+
+/* Sticky bid panel */
+.sticky-top { z-index: 100; }
+
+/* Price update animation */
+@keyframes priceUpdate {
+    0% { background: #d1e7dd; }
+    100% { background: transparent; }
+}
+
+.price-updated {
+    animation: priceUpdate 1.5s ease;
+}

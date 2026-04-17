@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load auction_extras %}
+{% block title %}Dashboard - BidHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary text-center p-3 shadow-sm">
+                <div class="fs-2 fw-bold text-primary">{{ active_bids.count }}</div>
+                <div class="text-muted small">Active Bids</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success text-center p-3 shadow-sm">
+                <div class="fs-2 fw-bold text-success">{{ winning_bids.count }}</div>
+                <div class="text-muted small">Currently Winning</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning text-center p-3 shadow-sm">
+                <div class="fs-2 fw-bold text-warning">{{ won_auctions.count }}</div>
+                <div class="text-muted small">Auctions Won</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info text-center p-3 shadow-sm">
+                <div class="fs-2 fw-bold text-info">{{ selling_auctions.count }}</div>
+                <div class="text-muted small">My Auctions</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Active Bids -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="mb-0"><i class="bi bi-hammer me-2"></i>Active Bids</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for bid in active_bids|slice:":5" %}
+                    <a href="{{ bid.auction.get_absolute_url }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">{{ bid.auction.item.title|truncatechars:40 }}</div>
+                                <div class="text-muted small">
+                                    Your bid: <strong>{{ bid.amount|currency }}</strong>
+                                    {% if bid.is_winning %}
+                                    <span class="badge bg-success ms-1">Winning</span>
+                                    {% else %}
+                                    <span class="badge bg-warning ms-1">Outbid</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="text-end small text-muted">
+                                {{ bid.auction|time_remaining_display }}
+                            </div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-muted text-center py-3">No active bids</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Selling Auctions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="mb-0"><i class="bi bi-bag me-2"></i>My Auctions</h5>
+                    <a href="{% url 'auctions:my_auctions' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for auction in selling_auctions|slice:":5" %}
+                    <a href="{{ auction.get_absolute_url }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">{{ auction.item.title|truncatechars:35 }}</div>
+                                <div class="text-muted small">
+                                    {{ auction.current_price|currency }} &bull; {{ auction.get_bid_count }} bids
+                                </div>
+                            </div>
+                            <span class="badge bg-{% if auction.status == 'active' %}success{% elif auction.status == 'ended' %}secondary{% else %}warning{% endif %} align-self-center">
+                                {{ auction.get_status_display }}
+                            </span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-muted text-center py-3">No auctions yet</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Won Auctions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Auctions Won</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for auction in won_auctions|slice:":5" %}
+                    <a href="{{ auction.get_absolute_url }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">{{ auction.item.title|truncatechars:40 }}</div>
+                                <div class="text-muted small">Won for {{ auction.current_price|currency }}</div>
+                            </div>
+                            <div class="text-muted small">{{ auction.end_time|date:"M j, Y" }}</div>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-muted text-center py-3">No auctions won yet</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

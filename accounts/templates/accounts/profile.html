@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load auction_extras %}
+{% block title %}{{ profile_user.username }} - BidHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body py-4">
+                    {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" class="rounded-circle mb-3" style="width:100px;height:100px;object-fit:cover;" alt="Avatar">
+                    {% else %}
+                    <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width:100px;height:100px;font-size:2.5rem;">
+                        {{ profile_user.username|first|upper }}
+                    </div>
+                    {% endif %}
+                    <h4>{{ profile_user.get_full_name|default:profile_user.username }}</h4>
+                    <div class="text-muted">@{{ profile_user.username }}</div>
+
+                    <!-- Rating Stars -->
+                    <div class="my-2">
+                        {% with rating=profile.get_rating %}
+                        {% for i in "12345" %}
+                        <i class="bi bi-star{% if forloop.counter <= rating %}-fill text-warning{% endif %}"></i>
+                        {% endfor %}
+                        <span class="ms-1 text-muted small">({{ rating }})</span>
+                        {% endwith %}
+                    </div>
+
+                    {% if profile.is_verified %}
+                    <span class="badge bg-success"><i class="bi bi-patch-check me-1"></i>Verified</span>
+                    {% endif %}
+
+                    <div class="row text-center mt-3 g-2">
+                        <div class="col-6">
+                            <div class="fw-bold fs-5">{{ profile.total_sales }}</div>
+                            <div class="text-muted small">Sales</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fw-bold fs-5">{{ profile.total_purchases }}</div>
+                            <div class="text-muted small">Purchases</div>
+                        </div>
+                    </div>
+
+                    {% if profile.bio %}
+                    <p class="mt-3 text-muted small">{{ profile.bio }}</p>
+                    {% endif %}
+
+                    {% if request.user == profile_user %}
+                    <a href="{% url 'accounts:edit_profile' %}" class="btn btn-outline-primary btn-sm mt-2">
+                        <i class="bi bi-pencil me-1"></i>Edit Profile
+                    </a>
+                    {% elif request.user.is_authenticated %}
+                    <div class="mt-3">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#rate-form">
+                            <i class="bi bi-star me-1"></i>Rate User
+                        </button>
+                        <div class="collapse mt-2" id="rate-form">
+                            <form method="post" action="{% url 'accounts:rate_user' profile_user.username %}">
+                                {% csrf_token %}
+                                <select name="score" class="form-select form-select-sm mb-2">
+                                    {% for v in "12345" %}
+                                    <option value="{{ v }}" {% if existing_rating and existing_rating.score == v|add:0 %}selected{% endif %}>{{ v }} Star{{ v|pluralize }}</option>
+                                    {% endfor %}
+                                </select>
+                                <textarea name="comment" class="form-control form-control-sm mb-2" rows="2"
+                                          placeholder="Optional comment">{% if existing_rating %}{{ existing_rating.comment }}{% endif %}</textarea>
+                                <button type="submit" class="btn btn-primary btn-sm w-100">Submit Rating</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Active Auctions -->
+            {% if active_selling %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h5 class="mb-0">Active Auctions</h5></div>
+                <div class="list-group list-group-flush">
+                    {% for auction in active_selling %}
+                    <a href="{{ auction.get_absolute_url }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between">
+                            <span>{{ auction.item.title|truncatechars:50 }}</span>
+                            <span class="fw-semibold text-primary">{{ auction.current_price|currency }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rating History -->
+            {% if ratings %}
+            <div class="card shadow-sm">
+                <div class="card-header"><h5 class="mb-0">Ratings & Reviews</h5></div>
+                <div class="list-group list-group-flush">
+                    {% for r in ratings %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'accounts:profile' r.rater.username %}">{{ r.rater.username }}</a>
+                            <div>
+                                {% for i in "12345" %}
+                                <i class="bi bi-star{% if forloop.counter <= r.score %}-fill text-warning{% endif %} small"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if r.comment %}<p class="mb-0 mt-1 small text-muted">{{ r.comment }}</p>{% endif %}
+                        <div class="text-muted" style="font-size:0.75rem;">{{ r.created_at|date:"M j, Y" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

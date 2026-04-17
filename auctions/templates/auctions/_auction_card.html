@@ -1,0 +1,55 @@
+{% load auction_extras %}
+<div class="auction-card card h-100 shadow-sm">
+    <div class="position-relative">
+        {% with auction.images.all as imgs %}
+        {% if imgs %}
+        <img src="{{ imgs.0.image.url }}" class="card-img-top auction-card-img" alt="{{ auction.item.title }}">
+        {% else %}
+        <div class="card-img-top auction-card-img bg-light d-flex align-items-center justify-content-center">
+            <i class="bi bi-image text-muted fs-1"></i>
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="position-absolute top-0 end-0 m-2">
+            {% if auction.status == 'active' %}
+            <span class="badge bg-success">Live</span>
+            {% elif auction.status == 'ended' %}
+            <span class="badge bg-secondary">Ended</span>
+            {% elif auction.status == 'draft' %}
+            <span class="badge bg-warning">Draft</span>
+            {% endif %}
+        </div>
+        {% if auction.buy_now_price %}
+        <div class="position-absolute top-0 start-0 m-2">
+            <span class="badge bg-info">Buy Now</span>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-body d-flex flex-column">
+        <h6 class="card-title fw-semibold">
+            <a href="{{ auction.get_absolute_url }}" class="text-decoration-none text-dark stretched-link">
+                {{ auction.item.title|truncatechars:60 }}
+            </a>
+        </h6>
+        <div class="text-muted small mb-2">
+            <i class="bi bi-tag me-1"></i>{{ auction.item.category.name }}
+            <span class="ms-2 badge bg-light text-dark">{{ auction.item.get_condition_display }}</span>
+        </div>
+        <div class="mt-auto">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small">Current Price</div>
+                    <div class="fw-bold text-primary fs-5">{{ auction.current_price|currency }}</div>
+                </div>
+                <div class="text-end">
+                    <div class="text-muted small">{{ auction.get_bid_count }} bid{{ auction.get_bid_count|pluralize }}</div>
+                    {% if auction.is_active %}
+                    <div class="countdown-timer text-danger small fw-semibold" data-end-time="{{ auction.end_time.isoformat }}">
+                        {{ auction|time_remaining_display }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
