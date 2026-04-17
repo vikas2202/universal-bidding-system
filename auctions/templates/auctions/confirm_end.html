@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}End Auction - BidHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-stop-circle me-2"></i>End Auction Early</h5>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to end the auction for <strong>{{ auction.item.title }}</strong>?</p>
+                    {% if auction.get_bid_count > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        This auction has {{ auction.get_bid_count }} bid(s). You can only end it if the reserve price is not met.
+                    </div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Yes, End Auction</button>
+                        <a href="{{ auction.get_absolute_url }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

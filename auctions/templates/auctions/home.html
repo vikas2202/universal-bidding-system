@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load auction_extras %}
+{% block title %}BidHub - Live Auctions{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section bg-primary text-white py-5 mb-4">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-5 fw-bold"><i class="bi bi-hammer me-2"></i>Universal Bidding System</h1>
+                <p class="lead">Transparent, fair, and secure online auctions. Bid with confidence.</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'auctions:list' %}" class="btn btn-light btn-lg">
+                        <i class="bi bi-grid me-1"></i>Browse Auctions
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'auctions:create' %}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-plus-circle me-1"></i>Sell an Item
+                    </a>
+                    {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-person-plus me-1"></i>Join Free
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-5 text-center d-none d-lg-block">
+                <div class="row text-center g-3 mt-2">
+                    <div class="col-4">
+                        <div class="stat-card bg-white bg-opacity-10 rounded p-3">
+                            <div class="fs-3 fw-bold">{{ stats.total_active }}</div>
+                            <div class="small">Live Auctions</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-card bg-white bg-opacity-10 rounded p-3">
+                            <div class="fs-3 fw-bold">{{ stats.total_ended }}</div>
+                            <div class="small">Completed</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-card bg-white bg-opacity-10 rounded p-3">
+                            <div class="fs-3 fw-bold">{{ stats.total_categories }}</div>
+                            <div class="small">Categories</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Categories -->
+    {% if categories %}
+    <section class="mb-5">
+        <h2 class="section-title mb-3">Browse by Category</h2>
+        <div class="row g-3">
+            {% for cat in categories %}
+            <div class="col-6 col-md-3 col-lg-2">
+                <a href="{% url 'auctions:list' %}?category={{ cat.slug }}" class="text-decoration-none">
+                    <div class="category-card text-center p-3 border rounded h-100 hover-shadow">
+                        <i class="bi {{ cat.icon }} fs-2 text-primary"></i>
+                        <div class="mt-2 fw-semibold small">{{ cat.name }}</div>
+                        {% if cat.active_count %}
+                        <span class="badge bg-primary rounded-pill">{{ cat.active_count }}</span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Ending Soon -->
+    {% if ending_soon %}
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title mb-0"><i class="bi bi-clock text-danger me-2"></i>Ending Soon</h2>
+            <a href="{% url 'auctions:list' %}?sort=ending_soon" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="row g-3">
+            {% for auction in ending_soon %}
+            <div class="col-md-6 col-lg-4">
+                {% include "auctions/_auction_card.html" with auction=auction %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Featured Auctions -->
+    {% if featured %}
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="section-title mb-0"><i class="bi bi-star text-warning me-2"></i>Featured Auctions</h2>
+            <a href="{% url 'auctions:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="row g-3">
+            {% for auction in featured %}
+            <div class="col-md-6 col-lg-4">
+                {% include "auctions/_auction_card.html" with auction=auction %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Recently Ended -->
+    {% if recently_ended %}
+    <section class="mb-5">
+        <h2 class="section-title mb-3"><i class="bi bi-check-circle text-success me-2"></i>Recently Ended</h2>
+        <div class="row g-3">
+            {% for auction in recently_ended %}
+            <div class="col-md-6 col-lg-3">
+                {% include "auctions/_auction_card.html" with auction=auction %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

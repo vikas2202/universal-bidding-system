@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% load auction_extras %}
+{% block title %}{{ auction.item.title }} - BidHub{% endblock %}
+
+{% block extra_css %}
+<style>
+.gallery-img { cursor: pointer; object-fit: cover; }
+.main-image { max-height: 400px; object-fit: contain; width: 100%; }
+#bid-form .form-control { font-size: 1.2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'auctions:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'auctions:list' %}">Auctions</a></li>
+            <li class="breadcrumb-item active">{{ auction.item.title|truncatechars:40 }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Left: Images + Details -->
+        <div class="col-lg-7">
+            <!-- Image Gallery -->
+            <div class="card shadow-sm mb-4">
+                {% with auction.images.all as imgs %}
+                {% if imgs %}
+                <img id="main-img" src="{{ imgs.0.image.url }}" class="card-img-top main-image p-2" alt="{{ auction.item.title }}">
+                {% if imgs|length > 1 %}
+                <div class="card-body p-2 d-flex gap-2 flex-wrap">
+                    {% for img in imgs %}
+                    <img src="{{ img.image.url }}" class="gallery-img rounded border" style="width:70px;height:70px;object-fit:cover;"
+                         onclick="document.getElementById('main-img').src=this.src">
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height:300px;">
+                    <i class="bi bi-image display-1 text-muted"></i>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Item Description -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Description</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ auction.item.description|linebreaksbr }}</p>
+                    <div class="row text-muted small">
+                        <div class="col-sm-6"><strong>Category:</strong> {{ auction.item.category.name }}</div>
+                        <div class="col-sm-6"><strong>Condition:</strong> {{ auction.item.get_condition_display }}</div>
+                        <div class="col-sm-6"><strong>Views:</strong> {{ auction.view_count }}</div>
+                        <div class="col-sm-6"><strong>Watching:</strong> {{ auction.watchlist_count }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bid History -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Bid History</h5>
+                    <a href="{% url 'bidding:bid_history' auction.pk %}" class="btn btn-sm btn-outline-primary">Full History</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if bids %}
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bidder</th>
+                                    <th>Amount</th>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bid in bids %}
+                                <tr {% if bid.is_winning %}class="table-success"{% endif %}>
+                                    <td>
+                                        {% if bid.is_winning %}<i class="bi bi-trophy-fill text-warning me-1"></i>{% endif %}
+                                        <a href="{% url 'accounts:profile' bid.bidder.username %}">{{ bid.bidder.username }}</a>
+                                    </td>
+                                    <td class="fw-semibold">{{ bid.amount|currency }}</td>
+                                    <td class="text-muted small">{{ bid.bid_time|date:"M j, g:i A" }}</td>
+                                    <td>
+                                        {% if bid.is_auto_bid %}
+                                        <span class="badge bg-info">Auto</span>
+                                        {% else %}
+                                        <span class="badge bg-primary">Manual</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox display-6"></i>
+                        <p class="mt-2">No bids yet. Be the first to bid!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Bid Panel -->
+        <div class="col-lg-5">
+            <div class="card shadow bid-panel sticky-top" style="top:80px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ auction.item.title }}</h5>
+                    <div class="small">
+                        Sold by <a href="{% url 'accounts:profile' auction.seller.username %}" class="text-white">{{ auction.seller.username }}</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Price -->
+                    <div class="text-center mb-3">
+                        <div class="text-muted small">Current Price</div>
+                        <div class="display-6 fw-bold text-primary" id="current-price">{{ auction.current_price|currency }}</div>
+                        <div class="text-muted small" id="bid-count">{{ auction.get_bid_count }} bid{{ auction.get_bid_count|pluralize }}</div>
+                    </div>
+
+                    <!-- Status/Timer -->
+                    {% if auction.is_active %}
+                    <div class="text-center mb-3">
+                        <div class="text-muted small">Time Remaining</div>
+                        <div class="countdown-display fw-bold fs-4 text-danger"
+                             id="main-countdown"
+                             data-end-time="{{ auction.end_time.isoformat }}"
+                             data-auction-id="{{ auction.pk }}">
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-secondary text-center">
+                        {% if auction.status == 'ended' %}
+                        <i class="bi bi-check-circle me-1"></i>Auction Ended
+                        {% elif auction.status == 'draft' %}
+                        <i class="bi bi-clock me-1"></i>Not Started
+                        {% else %}
+                        <i class="bi bi-x-circle me-1"></i>Auction {{ auction.get_status_display }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Reserve & Buy Now Info -->
+                    {% if auction.reserve_price %}
+                    <div class="mb-2 small">
+                        <i class="bi bi-lock me-1"></i>Reserve:
+                        {% if auction.reserve_met %}
+                        <span class="text-success fw-semibold">Reserve met</span>
+                        {% else %}
+                        <span class="text-warning fw-semibold">Reserve not met</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% if auction.buy_now_price %}
+                    <div class="mb-2 small">
+                        <i class="bi bi-lightning me-1"></i>Buy Now Price:
+                        <span class="fw-semibold">{{ auction.buy_now_price|currency }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Winner -->
+                    {% if auction.current_winner %}
+                    <div class="mb-3 small">
+                        <i class="bi bi-trophy me-1 text-warning"></i>
+                        {% if auction.status == 'ended' %}Winner{% else %}Highest Bidder{% endif %}:
+                        <a href="{% url 'accounts:profile' auction.current_winner.username %}" class="fw-semibold">
+                            {{ auction.current_winner.username }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Bid Form -->
+                    {% if can_bid %}
+                    <form id="bid-form" method="post" action="{% url 'bidding:place_bid' auction.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Your Bid</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="amount" id="bid-amount" class="form-control"
+                                       step="0.01" min="{{ auction.min_next_bid }}"
+                                       value="{{ auction.min_next_bid }}" required>
+                            </div>
+                            <div class="form-text">Minimum bid: <span class="fw-semibold">{{ auction.min_next_bid|currency }}</span></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Proxy Bid (Optional)
+                                <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip"
+                                   title="Set your maximum and we'll auto-bid for you up to that amount."></i>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="max_amount" id="proxy-amount" class="form-control"
+                                       step="0.01" min="{{ auction.min_next_bid }}" placeholder="Max amount (optional)">
+                            </div>
+                            {% if user_has_proxy %}
+                            <div class="form-text text-info">
+                                <i class="bi bi-robot me-1"></i>Active proxy bid: max ${{ user_has_proxy.max_amount }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100" id="bid-btn">
+                            <i class="bi bi-hammer me-2"></i>Place Bid
+                        </button>
+                    </form>
+                    {% elif not user.is_authenticated %}
+                    <div class="text-center">
+                        <p class="text-muted">Please log in to bid.</p>
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login to Bid
+                        </a>
+                    </div>
+                    {% elif auction.is_active %}
+                    <div class="alert alert-warning small">
+                        <i class="bi bi-exclamation-triangle me-1"></i>{{ bid_reason }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Buy Now Button -->
+                    {% if auction.buy_now_price and auction.is_active and user.is_authenticated and user != auction.seller %}
+                    <form method="post" action="{% url 'auctions:buy_now' auction.pk %}" class="mt-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Buy now for {{ auction.buy_now_price|currency }}?')">
+                            <i class="bi bi-lightning me-1"></i>Buy Now for {{ auction.buy_now_price|currency }}
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Watchlist -->
+                    <div class="mt-3 d-flex gap-2">
+                        {% if user.is_authenticated %}
+                        {% if is_watching %}
+                        <a href="{% url 'auctions:remove_watchlist' auction.pk %}" class="btn btn-outline-warning btn-sm flex-fill">
+                            <i class="bi bi-bookmark-fill me-1"></i>Watching
+                        </a>
+                        {% else %}
+                        <a href="{% url 'auctions:add_watchlist' auction.pk %}" class="btn btn-outline-secondary btn-sm flex-fill">
+                            <i class="bi bi-bookmark me-1"></i>Watch
+                        </a>
+                        {% endif %}
+                        {% endif %}
+
+                        {% if user == auction.seller and auction.status == 'active' %}
+                        <a href="{% url 'auctions:end_auction' auction.pk %}" class="btn btn-outline-danger btn-sm flex-fill">
+                            <i class="bi bi-stop-circle me-1"></i>End Auction
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer text-muted small text-center">
+                    <i class="bi bi-shield-check text-success me-1"></i>Bid history is public and immutable
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Auctions -->
+    {% if related %}
+    <section class="mt-5">
+        <h4 class="section-title mb-3">Related Auctions</h4>
+        <div class="row g-3">
+            {% for a in related %}
+            <div class="col-md-6 col-lg-3">
+                {% include "auctions/_auction_card.html" with auction=a %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipEls.forEach(function(el) { new bootstrap.Tooltip(el); });
+
+    var form = document.getElementById('bid-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBid(form, {{ auction.pk }});
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Create Auction - BidHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>Create New Auction</h2>
+            <form method="post" enctype="multipart/form-data" id="create-form">
+                {% csrf_token %}
+                <!-- Item Details -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white"><h5 class="mb-0">Item Details</h5></div>
+                    <div class="card-body">
+                        {% for field in item_form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                            {% render_field field class="form-control" %}
+                            {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Auction Settings -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white"><h5 class="mb-0">Auction Settings</h5></div>
+                    <div class="card-body">
+                        {% if auction_form.non_field_errors %}
+                        <div class="alert alert-danger">{{ auction_form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Start Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {% render_field auction_form.start_price class="form-control" %}
+                                </div>
+                                {% if auction_form.start_price.errors %}<div class="text-danger small">{{ auction_form.start_price.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Reserve Price
+                                    <span class="text-muted small">(optional)</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {% render_field auction_form.reserve_price class="form-control" %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Buy Now Price
+                                    <span class="text-muted small">(optional)</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {% render_field auction_form.buy_now_price class="form-control" %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Start Time *</label>
+                                {% render_field auction_form.start_time class="form-control" %}
+                                {% if auction_form.start_time.errors %}<div class="text-danger small">{{ auction_form.start_time.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">End Time *</label>
+                                {% render_field auction_form.end_time class="form-control" %}
+                                {% if auction_form.end_time.errors %}<div class="text-danger small">{{ auction_form.end_time.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {% render_field auction_form.auto_extend class="form-check-input" %}
+                                    <label class="form-check-label">{{ auction_form.auto_extend.label }}</label>
+                                    <div class="form-text">Extends auction by 5 minutes if a bid is placed in the last 5 minutes.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Images -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white"><h5 class="mb-0">Images</h5></div>
+                    <div class="card-body">
+                        <input type="file" name="images" class="form-control" multiple accept="image/*">
+                        <div class="form-text">You can select multiple images. The first image will be the primary image.</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-rocket me-2"></i>Create Auction
+                </button>
+                <a href="{% url 'auctions:list' %}" class="btn btn-outline-secondary btn-lg ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    var startField = document.querySelector('[name="start_time"]');
+    var endField = document.querySelector('[name="end_time"]');
+    if (startField && !startField.value) {
+        startField.value = now.toISOString().slice(0,16);
+    }
+    if (endField && !endField.value) {
+        var end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        endField.value = end.toISOString().slice(0,16);
+    }
+});
+</script>
+{% endblock %}
