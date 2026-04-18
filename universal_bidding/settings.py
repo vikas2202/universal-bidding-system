@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'auctions',
     'bidding',
     'notifications',
+    'fraud_detection',
 ]
 
 MIDDLEWARE = [

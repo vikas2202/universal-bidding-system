@@ -9,6 +9,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('bidding/', include('bidding.urls', namespace='bidding')),
     path('notifications/', include('notifications.urls', namespace='notifications')),
+    path('fraud/', include('fraud_detection.urls', namespace='fraud_detection')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Risk Profile – {{ profile_user.username }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-2">
+    <i class="bi bi-person-exclamation text-danger"></i>
+    Risk Profile: {{ profile_user.username }}
+  </h2>
+
+  {% if risk_profile %}
+  <div class="row g-3 mb-4">
+    <div class="col-sm-3"><div class="card text-center">
+      <div class="card-body">
+        <div class="fs-4 fw-bold text-danger">{{ risk_profile.overall_risk }}</div>
+        <small class="text-muted">Overall Risk (0–100)</small>
+      </div>
+    </div></div>
+    <div class="col-sm-3"><div class="card text-center">
+      <div class="card-body">
+        <div class="fs-4 fw-bold">{{ risk_profile.collusion_score }}</div>
+        <small class="text-muted">Collusion Score</small>
+      </div>
+    </div></div>
+    <div class="col-sm-3"><div class="card text-center">
+      <div class="card-body">
+        <div class="fs-4 fw-bold">{{ risk_profile.anomaly_score }}</div>
+        <small class="text-muted">Anomaly Score</small>
+      </div>
+    </div></div>
+    <div class="col-sm-3"><div class="card text-center">
+      <div class="card-body">
+        <div class="fs-4 fw-bold">{{ risk_profile.shill_score }}</div>
+        <small class="text-muted">Shill Score</small>
+      </div>
+    </div></div>
+  </div>
+  {% else %}
+  <p class="text-muted">No risk profile yet.</p>
+  {% endif %}
+
+  <h4>All Fraud Flags</h4>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-dark">
+        <tr><th>ID</th><th>Type</th><th>Severity</th><th>Description</th><th>Auction</th><th>Created</th></tr>
+      </thead>
+      <tbody>
+        {% for flag in flags %}
+        <tr>
+          <td>{{ flag.id }}</td>
+          <td>{{ flag.flag_type }}</td>
+          <td>{{ flag.severity }}</td>
+          <td>{{ flag.description|truncatechars:80 }}</td>
+          <td>{% if flag.auction %}{{ flag.auction.item.title|truncatechars:25 }}{% else %}—{% endif %}</td>
+          <td>{{ flag.created_at|date:"d M Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted">No flags.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

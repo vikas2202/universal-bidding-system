@@ -24,10 +24,10 @@ class AuctionImageInline(admin.TabularInline):
 @admin.register(Auction)
 class AuctionAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'item', 'seller', 'status', 'start_price', 'current_price',
+        'id', 'item', 'seller', 'auction_type', 'status', 'start_price', 'current_price',
         'current_winner', 'start_time', 'end_time', 'view_count'
     )
-    list_filter = ('status', 'item__category', 'auto_extend')
+    list_filter = ('status', 'auction_type', 'item__category', 'auto_extend')
     search_fields = ('item__title', 'seller__username')
     readonly_fields = ('view_count', 'watchlist_count', 'created_at', 'updated_at')
     inlines = [AuctionImageInline]
