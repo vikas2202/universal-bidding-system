@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Fraud Detection Dashboard{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h2 class="mb-4"><i class="bi bi-shield-exclamation text-danger"></i> Fraud Detection Dashboard</h2>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card border-danger h-100">
+        <div class="card-header bg-danger text-white">Unreviewed Flags by Type</div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Type</th><th>Count</th></tr></thead>
+            <tbody>
+              {% for s in flag_summary %}
+              <tr><td>{{ s.flag_type }}</td><td>{{ s.count }}</td></tr>
+              {% empty %}
+              <tr><td colspan="2" class="text-center text-muted">No flags</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header">High-Risk Bidders</div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>User</th><th>Flags</th><th>Risk</th></tr></thead>
+            <tbody>
+              {% for rp in high_risk_users %}
+              <tr>
+                <td><a href="{% url 'fraud_detection:user_risk' rp.user.pk %}">{{ rp.user.username }}</a></td>
+                <td>{{ rp.total_flags }}</td>
+                <td>{{ rp.overall_risk }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">None</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Recent Unreviewed Flags</h4>
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th><th>User</th><th>Type</th><th>Severity</th>
+          <th>Auction</th><th>IP</th><th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for flag in recent_flags %}
+        <tr>
+          <td>{{ flag.id }}</td>
+          <td><a href="{% url 'fraud_detection:user_risk' flag.user.pk %}">{{ flag.user.username }}</a></td>
+          <td><span class="badge bg-warning text-dark">{{ flag.flag_type }}</span></td>
+          <td>
+            {% if flag.severity == 'critical' %}<span class="badge bg-danger">critical</span>
+            {% elif flag.severity == 'high' %}<span class="badge bg-orange text-white" style="background:#fd7e14">high</span>
+            {% elif flag.severity == 'medium' %}<span class="badge bg-warning text-dark">medium</span>
+            {% else %}<span class="badge bg-secondary">low</span>{% endif %}
+          </td>
+          <td>{% if flag.auction %}<a href="{{ flag.auction.get_absolute_url }}">{{ flag.auction.item.title|truncatechars:30 }}</a>{% else %}—{% endif %}</td>
+          <td>{{ flag.ip_address|default:"—" }}</td>
+          <td>{{ flag.created_at|date:"d M Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted">No unreviewed flags.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

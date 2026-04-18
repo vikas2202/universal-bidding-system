@@ -86,6 +86,13 @@ def place_bid(request, pk):
 
     if success:
         bid = result
+        # Run fraud analysis asynchronously (fire-and-forget; errors don't affect the bid)
+        try:
+            from fraud_detection.services import analyse_bid
+            analyse_bid(bid)
+        except Exception:
+            pass
+
         msg = f"Bid of ${bid.amount:.2f} placed successfully!"
         if is_ajax:
             return JsonResponse({

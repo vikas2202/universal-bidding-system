@@ -4,7 +4,22 @@ from django.db.models import Avg
 
 
 class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('bidder', 'Bidder'),
+        ('auctioneer', 'Auctioneer'),
+        ('moderator', 'Moderator'),
+        ('admin', 'Admin'),
+    ]
+
+    KYC_STATUS_CHOICES = [
+        ('none', 'Not Submitted'),
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='bidder')
     bio = models.TextField(blank=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True)
@@ -12,6 +27,13 @@ class UserProfile(models.Model):
     total_sales = models.PositiveIntegerField(default=0)
     total_purchases = models.PositiveIntegerField(default=0)
     is_verified = models.BooleanField(default=False)
+    # KYC compliance
+    kyc_status = models.CharField(max_length=20, choices=KYC_STATUS_CHOICES, default='none')
+    kyc_submitted_at = models.DateTimeField(null=True, blank=True)
+    # Bidder trust/reputation
+    trust_score = models.FloatField(default=100.0, help_text='0–100; reduced by fraud flags')
+    is_blacklisted = models.BooleanField(default=False)
+    blacklist_reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

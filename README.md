@@ -7,7 +7,15 @@ Designed with strict anti-fraud rules and complete transparency to ensure fair, 
 
 ## ✨ Features
 
-### Bidding & Auction Engine
+### Multi-Strategy Bidding Engine
+| Auction Type | Description |
+|---|---|
+| **English Auction** | Ascending price; highest bid wins at end |
+| **Sealed-Bid Auction** | All bids are hidden; highest bid wins when auction ends |
+| **Dutch Auction** | Descending price; first bidder to accept wins immediately |
+| **Vickrey Auction** | Second-price sealed bid; winner pays the second-highest bid |
+
+### Bidding Engine
 | Feature | Description |
 |---|---|
 | **Live Auctions** | Real-time price updates via AJAX polling (every 15 s) |
@@ -26,18 +34,30 @@ Designed with strict anti-fraud rules and complete transparency to ensure fair, 
 | **Server-side time checks** | Auction end times enforced on the server, not the client |
 | **IP rate limiting** | Max 10 bids per minute per IP address (Django cache) |
 | **Public transparency** | Full bid history (including auto-bids) visible to all users |
+| **Blacklist system** | Admins can blacklist users; blacklisted users cannot bid |
+| **Bid anomaly detection** | Z-score analysis flags statistically unusual bid amounts |
+| **Rapid-fire detection** | Flags > 5 bids by the same user on one auction within 10 minutes |
+| **Collusion detection** | Flags multiple different accounts bidding from the same IP |
+| **Shill-pattern detection** | Flags bidders who bid on ≥ 5 of a seller's auctions but never win |
+| **Trust score** | Per-user 0–100 score reduced automatically when fraud flags are raised |
 
-### User Features
-- Registration & authentication
+### User Management & Compliance
+- User roles: **Bidder**, **Auctioneer**, **Moderator**, **Admin**
+- KYC (Know Your Customer) status tracking: None → Pending → Approved / Rejected
+- Bidder trust score (0–100; reduced by fraud flags)
 - User profiles with seller/buyer ratings
 - Personal dashboard (active bids, won auctions, selling)
 - Watchlist management
 - In-app notifications (outbid, won, reserve met, buy-now)
 
-### Admin
+### Admin & Monitoring
 - Full Django admin for all models
-- Auction moderation and monitoring
-- Bid log audit trail
+- **Fraud detection dashboard** at `/fraud/dashboard/` (staff only)
+- **Per-user risk profile** with collusion, anomaly and shill scores
+- Auction moderation with auction-type filter
+- KYC approval/rejection bulk actions
+- Blacklist management actions
+- Immutable bid log and fraud flag audit trails
 
 ---
 
@@ -85,7 +105,19 @@ Visit **http://127.0.0.1:8000/** to see the application.
 - Username: `user1` | Password: `password123`
 - Username: `user2` | Password: `password123`
 
-**Admin panel**: http://127.0.0.1:8000/admin/
+**Admin panel**: http://127.0.0.1:8000/admin/  
+**Fraud dashboard**: http://127.0.0.1:8000/fraud/dashboard/ (staff only)
+
+---
+
+## 🐳 Docker Deployment
+
+```bash
+cp .env.example .env
+# Edit .env with your secrets
+
+docker compose -f docker/docker-compose.yml up --build
+```
 
 ---
 
@@ -94,13 +126,15 @@ Visit **http://127.0.0.1:8000/** to see the application.
 ```
 universal-bidding-system/
 ├── universal_bidding/       # Django project settings & URLs
-├── accounts/                # User registration, auth, profiles, ratings
-├── auctions/                # Auction & item models, views, templates
+├── accounts/                # User registration, auth, profiles, roles, KYC, ratings
+├── auctions/                # Auction & item models, multi-strategy bidding engines
 │   ├── fixtures/            # Initial categories fixture
 │   └── management/commands/ # seed_data command
 ├── bidding/                 # Bid placement, proxy bidding, BidLog
 │   └── tests/               # 25 unit tests for all anti-fraud rules
+├── fraud_detection/         # Fraud analysis services, FraudFlag, BidderRiskProfile
 ├── notifications/           # In-app notification system
+├── docker/                  # Dockerfile & docker-compose.yml
 ├── static/
 │   ├── css/style.css        # Bootstrap 5 customisation
 │   └── js/bidding.js        # Countdown timers, AJAX bidding, auto-refresh
@@ -115,14 +149,30 @@ universal-bidding-system/
 DJANGO_DEBUG=True python manage.py test
 ```
 
-The test suite covers:
-- Shill bidding prevention
+The test suite (**63 tests**) covers:
+
+**Core bidding rules** (`bidding/tests/`)
+- Shill bidding prevention (seller can't bid on own auction)
 - Bid increment validation
 - Proxy bidding logic
 - Auto-extension on last-minute bids
 - Reserve price tracking
 - Bid history immutability
 - Ended-auction bid rejection
+
+**Auction types** (`auctions/tests.py`)
+- Sealed-bid: single submission, winner determination, seller blocked
+- Dutch: first-bidder wins, auction ends immediately, duplicate prevention
+- Vickrey: second-price logic, winner determination, edge cases
+
+**Fraud detection** (`fraud_detection/tests.py`)
+- Bid anomaly detection (Z-score outlier analysis)
+- Rapid-fire bidding detection (time-window check)
+- Collusion detection (shared IP, different users)
+- Shill-pattern detection (bidder never wins seller's auctions)
+- Risk profile updates and score calculations
+- Trust score floor enforcement
+- Blacklisted user bid rejection
 
 ---
 
@@ -143,10 +193,12 @@ The test suite covers:
 | `/` | Homepage – featured auctions, categories, stats |
 | `/auctions/` | Browse all active auctions |
 | `/auctions/<id>/` | Auction detail – bidding, history, countdown |
-| `/auctions/create/` | Create a new auction |
+| `/auctions/create/` | Create a new auction (choose auction type) |
 | `/accounts/register/` | User registration |
 | `/accounts/login/` | Login |
 | `/accounts/dashboard/` | Personal dashboard |
 | `/accounts/profile/<username>/` | Public user profile |
 | `/notifications/` | Notification inbox |
+| `/fraud/dashboard/` | Fraud detection dashboard (staff only) |
+| `/fraud/user/<id>/` | Per-user risk profile (staff only) |
 | `/admin/` | Admin panel |
