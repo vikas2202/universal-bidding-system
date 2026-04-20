@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Universal Bidding System{% endblock %}</title>
+    <title>{% block title %}BidHub – Live Auctions{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     {% load static %}
@@ -11,52 +11,103 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+
+<!-- ===== Top Bar ===== -->
+<div class="d-none d-lg-block" style="background:#0f172a; color:#94a3b8; font-size:.78rem; padding:.25rem 0;">
+    <div class="container d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-shield-check text-success me-1"></i>Safe &amp; Secure Bidding &nbsp;|&nbsp; <i class="bi bi-clock me-1"></i>Auctions close on the dot</span>
+        <span>
+            {% if not user.is_authenticated %}
+            <a href="{% url 'accounts:register' %}" class="text-warning text-decoration-none me-3">Register Free</a>
+            <a href="{% url 'accounts:login' %}" class="text-info text-decoration-none">Sign In</a>
+            {% else %}
+            Welcome back, <strong class="text-white">{{ user.username }}</strong>!
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+<!-- ===== Main Navbar ===== -->
+<nav class="navbar navbar-expand-lg navbar-dark" style="position:sticky;top:0;z-index:1030;">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'auctions:home' %}">
-            <i class="bi bi-hammer me-2"></i>BidHub
+        <!-- Brand -->
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="{% url 'auctions:home' %}">
+            <i class="bi bi-hammer fs-4"></i>
+            <span>BidHub</span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+
+        <!-- Inline Search (desktop) -->
+        <form class="d-none d-lg-flex navbar-search ms-3 me-3 flex-grow-1" style="max-width:380px;" method="get" action="{% url 'auctions:list' %}">
+            <input class="form-control form-control-sm" type="search" name="q" placeholder="Search auctions…" autocomplete="off">
+            <button class="btn btn-sm" type="submit"><i class="bi bi-search"></i></button>
+        </form>
+
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarMain">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'auctions:home' %}"><i class="bi bi-house me-1"></i>Home</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                       href="{% url 'auctions:home' %}"><i class="bi bi-house me-1"></i>Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'auctions:list' %}"><i class="bi bi-grid me-1"></i>Auctions</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'list' %}active{% endif %}"
+                       href="{% url 'auctions:list' %}"><i class="bi bi-grid me-1"></i>Auctions</a>
                 </li>
                 {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'auctions:create' %}"><i class="bi bi-plus-circle me-1"></i>Sell</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'auctions:watchlist' %}"><i class="bi bi-bookmark me-1"></i>Watchlist</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'watchlist' %}active{% endif %}"
+                       href="{% url 'auctions:watchlist' %}"><i class="bi bi-bookmark me-1"></i>Watchlist</a>
                 </li>
                 {% endif %}
             </ul>
-            <ul class="navbar-nav">
+
+            <!-- Mobile search -->
+            <form class="d-flex d-lg-none navbar-search my-2" method="get" action="{% url 'auctions:list' %}">
+                <input class="form-control form-control-sm" type="search" name="q" placeholder="Search auctions…">
+                <button class="btn btn-sm" type="submit"><i class="bi bi-search"></i></button>
+            </form>
+
+            <ul class="navbar-nav align-items-lg-center gap-1">
                 {% if user.is_authenticated %}
+                <!-- Sell CTA -->
                 <li class="nav-item">
-                    <a class="nav-link position-relative" href="{% url 'notifications:list' %}">
-                        <i class="bi bi-bell"></i>
-                        <span class="notification-badge badge bg-danger rounded-pill position-absolute" id="notif-count" style="display:none; font-size:0.6rem; top:0; right:0;"></span>
+                    <a class="nav-link btn-sell-nav px-3 py-1" href="{% url 'auctions:create' %}">
+                        <i class="bi bi-plus-circle-fill me-1"></i>Sell
                     </a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                <!-- Notifications -->
+                <li class="nav-item">
+                    <a class="nav-link position-relative px-2" href="{% url 'notifications:list' %}">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="notification-badge badge rounded-pill position-absolute" id="notif-count" style="display:none; font-size:.6rem; top:2px; right:0;"></span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
-                        <li><a class="dropdown-item" href="{% url 'accounts:profile' user.username %}"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="{% url 'auctions:my_auctions' %}"><i class="bi bi-list-ul me-2"></i>My Auctions</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                </li>
+                <!-- User dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-25"
+                              style="width:30px;height:30px;font-size:.85rem;font-weight:800;color:#fff;">
+                            {{ user.username|first|upper }}
+                        </span>
+                        <span class="d-none d-lg-inline">{{ user.username }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius:.75rem;min-width:200px;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark">{{ user.username }}</div>
+                            <div class="text-muted small">{{ user.email }}</div>
+                        </li>
+                        <li><a class="dropdown-item py-2" href="{% url 'accounts:dashboard' %}"><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'accounts:profile' user.username %}"><i class="bi bi-person me-2 text-primary"></i>My Profile</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'auctions:my_auctions' %}"><i class="bi bi-list-ul me-2 text-primary"></i>My Auctions</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'auctions:watchlist' %}"><i class="bi bi-bookmark me-2 text-primary"></i>Watchlist</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
                         <li>
                             <form method="post" action="{% url 'accounts:logout' %}">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button>
+                                <button type="submit" class="dropdown-item py-2 text-danger"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</button>
                             </form>
                         </li>
                     </ul>
@@ -66,7 +117,7 @@
                     <a class="nav-link" href="{% url 'accounts:login' %}"><i class="bi bi-box-arrow-in-right me-1"></i>Login</a>
                 </li>
                 <li class="nav-item">
-                    <a class="btn btn-outline-light btn-sm ms-2" href="{% url 'accounts:register' %}">Register</a>
+                    <a class="btn btn-outline-light btn-sm ms-1 px-3" href="{% url 'accounts:register' %}" style="border-radius:20px;">Register</a>
                 </li>
                 {% endif %}
             </ul>
@@ -74,51 +125,91 @@
     </div>
 </nav>
 
+<!-- ===== Flash Messages ===== -->
+{% if messages %}
 <div class="container mt-3">
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert" style="border-radius:.75rem;border:none;">
+        {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>
+        {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="bi bi-x-circle-fill me-2"></i>
+        {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {% else %}<i class="bi bi-info-circle-fill me-2"></i>{% endif %}
         {{ message }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endfor %}
 </div>
+{% endif %}
 
 <main>
     {% block content %}{% endblock %}
 </main>
 
-<footer class="bg-dark text-light py-4 mt-5">
+<!-- ===== Footer ===== -->
+<footer class="site-footer">
     <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-                <h5><i class="bi bi-hammer me-2"></i>BidHub</h5>
-                <p class="text-muted small">The universal bidding platform with fair, transparent auctions.</p>
+        <div class="row g-4 mb-4">
+            <!-- Brand -->
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-brand mb-2"><i class="bi bi-hammer me-2"></i>BidHub</div>
+                <p class="small" style="color:#94a3b8;line-height:1.7;">
+                    The universal bidding platform with fair, transparent auctions. Millions of items. Thousands of daily auctions.
+                </p>
+                <div class="d-flex gap-3 mt-3">
+                    <a href="#" class="text-muted fs-5"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#" class="text-muted fs-5"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="text-muted fs-5"><i class="bi bi-instagram"></i></a>
+                </div>
             </div>
-            <div class="col-md-4">
-                <h6>Quick Links</h6>
+
+            <!-- Quick Links -->
+            <div class="col-lg-2 col-md-3 col-6">
+                <div class="footer-heading">Quick Links</div>
                 <ul class="list-unstyled small">
-                    <li><a href="{% url 'auctions:list' %}" class="text-muted text-decoration-none">Browse Auctions</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:list' %}">Browse Auctions</a></li>
                     {% if user.is_authenticated %}
-                    <li><a href="{% url 'auctions:create' %}" class="text-muted text-decoration-none">Sell an Item</a></li>
-                    <li><a href="{% url 'accounts:dashboard' %}" class="text-muted text-decoration-none">Dashboard</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:create' %}">Sell an Item</a></li>
+                    <li class="mb-1"><a href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:watchlist' %}">Watchlist</a></li>
                     {% else %}
-                    <li><a href="{% url 'accounts:register' %}" class="text-muted text-decoration-none">Register</a></li>
-                    <li><a href="{% url 'accounts:login' %}" class="text-muted text-decoration-none">Login</a></li>
+                    <li class="mb-1"><a href="{% url 'accounts:register' %}">Register Free</a></li>
+                    <li class="mb-1"><a href="{% url 'accounts:login' %}">Sign In</a></li>
                     {% endif %}
                 </ul>
             </div>
-            <div class="col-md-4">
-                <h6>Fair Bidding Guarantee</h6>
-                <ul class="list-unstyled small text-muted">
-                    <li><i class="bi bi-shield-check me-1 text-success"></i>No shill bidding</li>
-                    <li><i class="bi bi-shield-check me-1 text-success"></i>Immutable bid history</li>
-                    <li><i class="bi bi-shield-check me-1 text-success"></i>Proxy bidding support</li>
-                    <li><i class="bi bi-shield-check me-1 text-success"></i>Rate-limited bid placement</li>
+
+            <!-- Categories -->
+            <div class="col-lg-2 col-md-3 col-6">
+                <div class="footer-heading">Categories</div>
+                <ul class="list-unstyled small">
+                    <li class="mb-1"><a href="{% url 'auctions:list' %}?category=electronics">Electronics</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:list' %}?category=art">Art</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:list' %}?category=jewelry">Jewelry</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:list' %}?category=collectibles">Collectibles</a></li>
+                    <li class="mb-1"><a href="{% url 'auctions:list' %}?category=vehicles">Vehicles</a></li>
                 </ul>
             </div>
+
+            <!-- Trust -->
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-heading">Our Guarantee</div>
+                <div class="trust-item"><i class="bi bi-shield-check"></i><span>No shill bidding — verified by AI fraud detection</span></div>
+                <div class="trust-item"><i class="bi bi-shield-check"></i><span>Immutable, public bid history</span></div>
+                <div class="trust-item"><i class="bi bi-shield-check"></i><span>Proxy bidding — we bid for you automatically</span></div>
+                <div class="trust-item"><i class="bi bi-shield-check"></i><span>Rate-limited &amp; authenticated bid placement</span></div>
+                <div class="trust-item"><i class="bi bi-shield-check"></i><span>Multiple auction types: English, Dutch, Vickrey</span></div>
+            </div>
         </div>
-        <hr class="border-secondary">
-        <p class="text-center text-muted small mb-0">&copy; 2024 BidHub. All rights reserved.</p>
+
+        <hr class="footer-divider">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2" style="font-size:.78rem;color:#64748b;">
+            <span>&copy; 2024 BidHub. All rights reserved.</span>
+            <span>
+                <a href="#" class="me-3">Privacy Policy</a>
+                <a href="#" class="me-3">Terms of Service</a>
+                <a href="#">Help</a>
+            </span>
+        </div>
     </div>
 </footer>
 

@@ -1,58 +1,91 @@
 {% extends "base.html" %}
 {% load auction_extras %}
-{% block title %}My Auctions - BidHub{% endblock %}
+{% block title %}My Auctions – BidHub{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-list-ul me-2"></i>My Auctions</h2>
-        <a href="{% url 'auctions:create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i>Create New
+        <div>
+            <h2 class="fw-black mb-1" style="font-weight:900;">My Auctions</h2>
+            <p class="text-muted small mb-0">Manage your active and past listings</p>
+        </div>
+        <a href="{% url 'auctions:create' %}" class="btn btn-lg fw-bold text-white"
+           style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-secondary));border:none;border-radius:28px;box-shadow:0 3px 12px rgba(26,35,126,.3);">
+            <i class="bi bi-plus-circle-fill me-2"></i>New Listing
         </a>
     </div>
 
     {% if selling %}
-    <div class="card shadow-sm">
+    <div class="card shadow-sm" style="border:none;border-radius:var(--card-radius);overflow:hidden;">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-dark">
+            <table class="table table-hover align-middle mb-0">
+                <thead style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-secondary));color:#fff;">
                     <tr>
-                        <th>Item</th>
+                        <th class="ps-4">Item</th>
+                        <th>Category</th>
                         <th>Status</th>
                         <th>Start Price</th>
                         <th>Current Price</th>
                         <th>Bids</th>
                         <th>End Time</th>
-                        <th>Actions</th>
+                        <th class="pe-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for auction in selling %}
                     <tr>
-                        <td>
-                            <a href="{{ auction.get_absolute_url }}">{{ auction.item.title|truncatechars:40 }}</a>
+                        <td class="ps-4">
+                            <a href="{{ auction.get_absolute_url }}" class="fw-semibold text-decoration-none text-dark">
+                                {{ auction.item.title|truncatechars:40 }}
+                            </a>
                         </td>
                         <td>
-                            <span class="badge bg-{% if auction.status == 'active' %}success{% elif auction.status == 'ended' %}secondary{% elif auction.status == 'draft' %}warning{% else %}danger{% endif %}">
+                            {% if auction.item.category %}
+                            <span class="badge-auction-type">
+                                <i class="bi {{ auction.item.category.icon }} me-1"></i>{{ auction.item.category.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-pill {{ auction.status }}">
+                                {% if auction.status == 'active' %}<i class="bi bi-circle-fill" style="font-size:.5rem;"></i>{% endif %}
                                 {{ auction.get_status_display }}
                             </span>
                         </td>
-                        <td>{{ auction.start_price|currency }}</td>
-                        <td class="fw-semibold {% if auction.current_price > auction.start_price %}text-success{% endif %}">
+                        <td class="text-muted">{{ auction.start_price|currency }}</td>
+                        <td class="fw-bold {% if auction.current_price > auction.start_price %}text-success{% endif %}">
                             {{ auction.current_price|currency }}
-                        </td>
-                        <td>{{ auction.get_bid_count }}</td>
-                        <td class="small">
-                            {{ auction.end_time|date:"M j, Y g:i A" }}
-                            {% if auction.is_active %}
-                            <br><span class="text-danger">{{ auction|time_remaining_display }}</span>
+                            {% if auction.current_price > auction.start_price %}
+                            <span class="text-success small"><i class="bi bi-arrow-up"></i></span>
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ auction.get_absolute_url }}" class="btn btn-sm btn-outline-primary">View</a>
-                            {% if auction.status == 'active' %}
-                            <a href="{% url 'auctions:end_auction' auction.pk %}" class="btn btn-sm btn-outline-danger">End</a>
+                            <span class="badge rounded-pill" style="background:var(--brand-primary);color:#fff;">
+                                {{ auction.get_bid_count }}
+                            </span>
+                        </td>
+                        <td class="small text-muted">
+                            {{ auction.end_time|date:"M j, Y" }}<br>
+                            <span class="text-secondary">{{ auction.end_time|date:"g:i A" }}</span>
+                            {% if auction.is_active %}
+                            <br><span class="text-danger fw-semibold">{{ auction|time_remaining_display }}</span>
                             {% endif %}
+                        </td>
+                        <td class="pe-4">
+                            <div class="d-flex gap-1">
+                                <a href="{{ auction.get_absolute_url }}"
+                                   class="btn btn-sm btn-outline-primary" style="border-radius:20px;">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if auction.status == 'active' %}
+                                <a href="{% url 'auctions:end_auction' auction.pk %}"
+                                   class="btn btn-sm btn-outline-danger" style="border-radius:20px;">
+                                    <i class="bi bi-stop-circle"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -61,11 +94,13 @@
         </div>
     </div>
     {% else %}
-    <div class="text-center py-5">
-        <i class="bi bi-inbox display-4 text-muted"></i>
-        <h5 class="mt-3">No auctions yet</h5>
-        <p class="text-muted">Start selling by creating your first auction.</p>
-        <a href="{% url 'auctions:create' %}" class="btn btn-primary">Create Auction</a>
+    <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-box-seam"></i></div>
+        <h5 class="fw-bold">No listings yet</h5>
+        <p class="text-muted">Start selling today — it takes less than 2 minutes.</p>
+        <a href="{% url 'auctions:create' %}" class="btn btn-primary mt-2" style="border-radius:28px;padding:.6rem 2rem;">
+            <i class="bi bi-plus-circle-fill me-2"></i>Create Your First Auction
+        </a>
     </div>
     {% endif %}
 </div>
