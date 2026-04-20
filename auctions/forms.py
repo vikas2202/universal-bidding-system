@@ -68,6 +68,7 @@ class AuctionSearchForm(forms.Form):
         queryset=Category.objects.all(),
         required=False,
         empty_label='All Categories',
+        to_field_name='slug',
     )
     condition = forms.ChoiceField(
         choices=[('', 'Any Condition')] + Item.CONDITION_CHOICES,
