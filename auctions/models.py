@@ -8,14 +8,28 @@ import datetime
 
 
 class Category(models.Model):
+    GROUP_CHOICES = [
+        ('physical', 'Physical Items'),
+        ('digital', 'Digital Assets'),
+        ('services', 'Services'),
+        ('realestate', 'Real Estate & Property'),
+        ('tickets', 'Tickets & Access'),
+        ('education', 'Education & Career'),
+        ('industrial', 'Industrial / B2B'),
+        ('financial', 'Financial / Abstract'),
+        ('entertainment', 'Entertainment & Gaming'),
+        ('custom', 'Custom / Open Listings'),
+    ]
+
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, default='bi-tag', help_text='Bootstrap icon class')
+    group = models.CharField(max_length=30, choices=GROUP_CHOICES, default='physical', help_text='Category group/section')
 
     class Meta:
         verbose_name_plural = 'categories'
-        ordering = ['name']
+        ordering = ['group', 'name']
 
     def __str__(self):
         return self.name
