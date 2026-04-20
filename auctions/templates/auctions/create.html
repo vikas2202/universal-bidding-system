@@ -67,16 +67,28 @@
                             {% if item_form.condition.errors %}<div class="text-danger small mt-1">{{ item_form.condition.errors.0 }}</div>{% endif %}
                         </div>
 
-                        <!-- Category Dropdown -->
+                        <!-- Hidden category select (value synced by JS) -->
+                        {% render_field item_form.category id="id_category" style="display:none" %}
+                        {% if item_form.category.errors %}<div class="text-danger small mt-1">{{ item_form.category.errors.0 }}</div>{% endif %}
+
+                        <!-- Visual Category Picker -->
                         <div class="mb-1">
-                            <label class="form-label fw-semibold" for="id_category">
+                            <label class="form-label fw-semibold">
                                 Category <span class="text-danger">*</span>
                             </label>
-                            <p class="text-muted small mb-2">Choose the category that best describes your item.</p>
-                            <div class="category-select-wrapper position-relative">
-                                {% render_field item_form.category id="id_category" class="form-select form-select-lg category-select" %}
+                            <p class="text-muted small mb-3">Choose the category that best describes your item.</p>
+                            <div class="category-picker" id="category-picker">
+                                {% for cat in categories %}
+                                <label class="category-option" data-value="{{ cat.pk }}">
+                                    <input type="radio" name="_cat_visual" value="{{ cat.pk }}"
+                                           {% if item_form.category.value == cat.pk|stringformat:'s' %}checked{% endif %}>
+                                    <div class="category-option-card">
+                                        <i class="bi {{ cat.icon }} cat-pick-icon"></i>
+                                        <div class="cat-pick-name">{{ cat.name }}</div>
+                                    </div>
+                                </label>
+                                {% endfor %}
                             </div>
-                            {% if item_form.category.errors %}<div class="text-danger small mt-1">{{ item_form.category.errors.0 }}</div>{% endif %}
                         </div>
 
                     </div>
@@ -211,6 +223,28 @@ document.addEventListener('DOMContentLoaded', function() {
         endField.value = end.toISOString().slice(0,16);
     }
 
+    // ── Visual category picker ──
+    var catSelect = document.getElementById('id_category');
+    var catRadios = document.querySelectorAll('[name="_cat_visual"]');
+
+    // Sync visual → hidden select
+    catRadios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            catSelect.value = this.value;
+        });
+    });
+
+    // Pre-select based on existing select value
+    if (catSelect.value) {
+        catRadios.forEach(function(r) {
+            if (r.value === catSelect.value) r.checked = true;
+        });
+    } else if (catRadios.length > 0) {
+        // Select first by default
+        catRadios[0].checked = true;
+        catSelect.value = catRadios[0].value;
+    }
+
     // ── Condition option styling ──
     document.querySelectorAll('.condition-opt').forEach(function(label) {
         var radio = label.querySelector('input[type="radio"]');
@@ -235,22 +269,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateStyle();
         });
     });
-
-    // ── Category select highlight on change ──
-    var catSelect = document.getElementById('id_category');
-    if (catSelect) {
-        function updateCatStyle() {
-            if (catSelect.value) {
-                catSelect.style.borderColor = 'var(--brand-primary)';
-                catSelect.style.boxShadow   = '0 0 0 2px rgba(26,35,126,.15)';
-            } else {
-                catSelect.style.borderColor = '';
-                catSelect.style.boxShadow   = '';
-            }
-        }
-        updateCatStyle();
-        catSelect.addEventListener('change', updateCatStyle);
-    }
 
     // ── Image preview ──
     var imgInput   = document.getElementById('image-upload');
