@@ -71,23 +71,84 @@
                         {% render_field item_form.category id="id_category" style="display:none" %}
                         {% if item_form.category.errors %}<div class="text-danger small mt-1">{{ item_form.category.errors.0 }}</div>{% endif %}
 
-                        <!-- Visual Category Picker -->
-                        <div class="mb-1">
+                        <!-- OLX-style Category Picker -->
+                        <div class="mb-1" id="category-section">
                             <label class="form-label fw-semibold">
                                 Category <span class="text-danger">*</span>
                             </label>
-                            <p class="text-muted small mb-3">Choose the category that best describes your item.</p>
-                            <div class="category-picker" id="category-picker">
-                                {% for cat in categories %}
-                                <label class="category-option" data-value="{{ cat.pk }}">
-                                    <input type="radio" name="_cat_visual" value="{{ cat.pk }}"
-                                           {% if item_form.category.value == cat.pk|stringformat:'s' %}checked{% endif %}>
-                                    <div class="category-option-card">
-                                        <i class="bi {{ cat.icon }} cat-pick-icon"></i>
-                                        <div class="cat-pick-name">{{ cat.name }}</div>
-                                    </div>
-                                </label>
+                            <p class="text-muted small mb-2">Choose the category that best describes your item.</p>
+
+                            <!-- Selected category badge -->
+                            <div id="selected-cat-badge" class="mb-3" style="display:none;">
+                                <span class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill fw-semibold"
+                                      style="background:linear-gradient(135deg,#e8eaf6,#c5cae9);color:var(--brand-primary);font-size:.85rem;">
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span id="selected-cat-name">—</span>
+                                    <button type="button" id="clear-cat-btn" class="btn btn-sm p-0 ms-1" style="line-height:1;color:var(--brand-primary);" title="Change category">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </span>
+                            </div>
+
+                            <!-- Category search -->
+                            <div class="position-relative mb-3" id="cat-search-wrap">
+                                <i class="bi bi-search position-absolute" style="left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none;"></i>
+                                <input type="text" id="cat-search-input" class="form-control ps-5"
+                                       placeholder="Search categories…" autocomplete="off">
+                            </div>
+
+                            <!-- Group tabs -->
+                            <div class="cat-group-tabs mb-3" id="cat-group-tabs">
+                                {% for group_key, group_data in grouped_categories.items %}
+                                <button type="button"
+                                        class="cat-group-tab {% if forloop.first %}active{% endif %}"
+                                        data-group="{{ group_key }}">
+                                    <span class="cat-group-emoji">
+                                        {% if group_key == 'physical' %}📦
+                                        {% elif group_key == 'digital' %}💻
+                                        {% elif group_key == 'services' %}🧑‍💼
+                                        {% elif group_key == 'realestate' %}🏢
+                                        {% elif group_key == 'tickets' %}🎟️
+                                        {% elif group_key == 'education' %}🎓
+                                        {% elif group_key == 'industrial' %}🚜
+                                        {% elif group_key == 'financial' %}💡
+                                        {% elif group_key == 'entertainment' %}🎮
+                                        {% elif group_key == 'custom' %}🧾
+                                        {% else %}📂
+                                        {% endif %}
+                                    </span>
+                                    <span class="cat-group-label">{{ group_data.label }}</span>
+                                </button>
                                 {% endfor %}
+                            </div>
+
+                            <!-- Category grid panels (one per group) -->
+                            <div id="cat-panels">
+                                {% for group_key, group_data in grouped_categories.items %}
+                                <div class="cat-panel {% if not forloop.first %}d-none{% endif %}"
+                                     data-group="{{ group_key }}" id="cat-panel-{{ group_key }}">
+                                    <div class="category-picker">
+                                        {% for cat in group_data.categories %}
+                                        <label class="category-option" data-value="{{ cat.pk }}" data-name="{{ cat.name }}" data-group="{{ group_key }}">
+                                            <input type="radio" name="_cat_visual" value="{{ cat.pk }}"
+                                                   {% if item_form.category.value == cat.pk|stringformat:'s' %}checked{% endif %}>
+                                            <div class="category-option-card">
+                                                <i class="bi {{ cat.icon }} cat-pick-icon"></i>
+                                                <div class="cat-pick-name">{{ cat.name }}</div>
+                                            </div>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+
+                                <!-- Search results panel (hidden by default) -->
+                                <div class="cat-panel d-none" id="cat-panel-search">
+                                    <div class="category-picker" id="cat-search-results"></div>
+                                    <p class="text-muted small mt-2 d-none" id="cat-no-results">
+                                        <i class="bi bi-emoji-frown me-1"></i> No categories found. Try a different search.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -223,26 +284,130 @@ document.addEventListener('DOMContentLoaded', function() {
         endField.value = end.toISOString().slice(0,16);
     }
 
-    // ── Visual category picker ──
-    var catSelect = document.getElementById('id_category');
-    var catRadios = document.querySelectorAll('[name="_cat_visual"]');
+    // ── Category picker ──
+    var catSelect    = document.getElementById('id_category');
+    var catRadios    = document.querySelectorAll('[name="_cat_visual"]');
+    var groupTabs    = document.querySelectorAll('.cat-group-tab');
+    var catPanels    = document.querySelectorAll('.cat-panel[data-group]');
+    var searchPanel  = document.getElementById('cat-panel-search');
+    var searchInput  = document.getElementById('cat-search-input');
+    var searchResults= document.getElementById('cat-search-results');
+    var noResults    = document.getElementById('cat-no-results');
+    var selectedBadge= document.getElementById('selected-cat-badge');
+    var selectedName = document.getElementById('selected-cat-name');
+    var clearBtn     = document.getElementById('clear-cat-btn');
 
-    // Sync visual → hidden select
-    catRadios.forEach(function(radio) {
-        radio.addEventListener('change', function() {
-            catSelect.value = this.value;
+    // Build flat list of all category options
+    var allOptions = Array.from(document.querySelectorAll('.category-option[data-value]'));
+
+    function showBadge(name) {
+        selectedName.textContent = name;
+        selectedBadge.style.display = '';
+    }
+    function hideBadge() {
+        selectedBadge.style.display = 'none';
+    }
+
+    // Sync radio -> hidden select and badge
+    function syncSelection(radio) {
+        catSelect.value = radio.value;
+        var opt = radio.closest('.category-option');
+        if (opt) showBadge(opt.dataset.name);
+        // Style all options
+        allOptions.forEach(function(o) {
+            o.querySelector('.category-option-card').classList.remove('cat-selected');
         });
+        opt && opt.querySelector('.category-option-card').classList.add('cat-selected');
+    }
+
+    catRadios.forEach(function(radio) {
+        radio.addEventListener('change', function() { syncSelection(this); });
     });
 
-    // Pre-select based on existing select value
+    // Pre-select if value already set
     if (catSelect.value) {
         catRadios.forEach(function(r) {
-            if (r.value === catSelect.value) r.checked = true;
+            if (r.value === catSelect.value) {
+                r.checked = true;
+                syncSelection(r);
+                // Switch to that group's tab
+                var opt = r.closest('.category-option');
+                if (opt && opt.dataset.group) activateGroup(opt.dataset.group);
+            }
         });
-    } else if (catRadios.length > 0) {
-        // Select first by default
-        catRadios[0].checked = true;
-        catSelect.value = catRadios[0].value;
+    }
+
+    // Clear selection
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            catRadios.forEach(function(r) { r.checked = false; });
+            catSelect.value = '';
+            hideBadge();
+            allOptions.forEach(function(o) {
+                o.querySelector('.category-option-card').classList.remove('cat-selected');
+            });
+        });
+    }
+
+    // ── Group tabs ──
+    function activateGroup(groupKey) {
+        groupTabs.forEach(function(t) {
+            t.classList.toggle('active', t.dataset.group === groupKey);
+        });
+        catPanels.forEach(function(p) {
+            p.classList.toggle('d-none', p.dataset.group !== groupKey);
+        });
+        if (searchPanel) searchPanel.classList.add('d-none');
+        if (searchInput) searchInput.value = '';
+        if (noResults) noResults.classList.add('d-none');
+    }
+
+    groupTabs.forEach(function(tab) {
+        tab.addEventListener('click', function() { activateGroup(this.dataset.group); });
+    });
+
+    // ── Category search ──
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var q = this.value.trim().toLowerCase();
+            if (!q) {
+                // Restore first active tab
+                searchPanel && searchPanel.classList.add('d-none');
+                noResults && noResults.classList.add('d-none');
+                var activeTab = document.querySelector('.cat-group-tab.active');
+                catPanels.forEach(function(p) {
+                    p.classList.toggle('d-none', activeTab ? p.dataset.group !== activeTab.dataset.group : false);
+                });
+                return;
+            }
+            // Hide all group panels; show search panel
+            catPanels.forEach(function(p) { p.classList.add('d-none'); });
+            searchPanel && searchPanel.classList.remove('d-none');
+
+            var matches = allOptions.filter(function(o) {
+                return o.dataset.name.toLowerCase().includes(q);
+            });
+
+            if (searchResults) {
+                searchResults.innerHTML = '';
+                matches.forEach(function(o) {
+                    var clone = o.cloneNode(true);
+                    var clonedRadio = clone.querySelector('input[type="radio"]');
+                    // Preserve checked state
+                    if (catSelect.value && clonedRadio.value === catSelect.value) {
+                        clonedRadio.checked = true;
+                    }
+                    clonedRadio.addEventListener('change', function() {
+                        // Also update original radio
+                        catRadios.forEach(function(r) { if (r.value === clonedRadio.value) r.checked = true; });
+                        syncSelection(clonedRadio);
+                    });
+                    searchResults.appendChild(clone);
+                });
+            }
+
+            if (noResults) noResults.classList.toggle('d-none', matches.length > 0);
+        });
     }
 
     // ── Condition option styling ──

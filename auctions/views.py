@@ -181,10 +181,24 @@ def create_auction(request):
         item_form = ItemForm()
         auction_form = AuctionForm()
 
+    # Build grouped categories for the OLX-style picker
+    all_categories = Category.objects.all()
+    group_labels = dict(Category.GROUP_CHOICES)
+    grouped_categories = {}
+    for cat in all_categories:
+        group_key = cat.group
+        if group_key not in grouped_categories:
+            grouped_categories[group_key] = {
+                'label': group_labels.get(group_key, group_key.title()),
+                'categories': [],
+            }
+        grouped_categories[group_key]['categories'].append(cat)
+
     return render(request, 'auctions/create.html', {
         'item_form': item_form,
         'auction_form': auction_form,
-        'categories': Category.objects.all(),
+        'categories': all_categories,
+        'grouped_categories': grouped_categories,
     })
 
 
