@@ -2,12 +2,7 @@
 {% load widget_tweaks %}
 {% block title %}List an Item for Auction – BidHub{% endblock %}
 
-{% block extra_css %}
-<style>
-/* Override hidden category select */
-#id_category { display: none !important; }
-</style>
-{% endblock %}
+{% block extra_css %}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -73,7 +68,7 @@
                         </div>
 
                         <!-- Hidden category select (value synced by JS) -->
-                        {% render_field item_form.category id="id_category" %}
+                        {% render_field item_form.category id="id_category" style="display:none" %}
                         {% if item_form.category.errors %}<div class="text-danger small mt-1">{{ item_form.category.errors.0 }}</div>{% endif %}
 
                         <!-- Visual Category Picker -->
