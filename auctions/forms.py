@@ -3,12 +3,35 @@ from django.utils import timezone
 from .models import Auction, Item, AuctionImage, Category
 
 
+class GroupedCategorySelect(forms.Select):
+    """Renders Category options grouped by their `group` field using <optgroup>."""
+
+    def optgroups(self, name, value, attrs=None):
+        groups = {}
+        group_label_map = dict(Category.GROUP_CHOICES)
+        for category in Category.objects.order_by('group', 'name'):
+            label = group_label_map.get(category.group, category.get_group_display())
+            groups.setdefault(label, []).append((str(category.pk), str(category)))
+
+        result = []
+        # Empty / placeholder option
+        result.append((None, [self.create_option(name, '', '---------', value, 0)], 0))
+        for idx, (group_label, options) in enumerate(groups.items(), start=1):
+            subgroup = []
+            for opt_value, opt_label in options:
+                selected = opt_value in value
+                subgroup.append(self.create_option(name, opt_value, opt_label, [opt_value] if selected else [], idx))
+            result.append((group_label, subgroup, idx))
+        return result
+
+
 class ItemForm(forms.ModelForm):
     class Meta:
         model = Item
         fields = ('title', 'description', 'category', 'condition')
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
+            'category': GroupedCategorySelect(),
         }
 
 
