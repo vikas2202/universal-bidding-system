@@ -462,57 +462,6 @@ body {
     padding-left: 2.4rem;
 }
 
-
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: .75rem;
-}
-
-.category-option {
-    cursor: pointer;
-}
-
-.category-option input[type="radio"] {
-    display: none;
-}
-
-.category-option-card {
-    border: 2px solid #e2e8f0;
-    border-radius: .75rem;
-    padding: .75rem .5rem;
-    text-align: center;
-    transition: all var(--transition);
-    background: #fff;
-    user-select: none;
-}
-
-.category-option-card:hover {
-    border-color: var(--brand-primary);
-    background: #e8eaf6;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(26,35,126,.12);
-}
-
-.category-option input[type="radio"]:checked + .category-option-card {
-    border-color: var(--brand-primary);
-    background: linear-gradient(135deg, #e8eaf6, #c5cae9);
-    box-shadow: 0 0 0 3px rgba(26,35,126,.2);
-}
-
-.category-option-card .cat-pick-icon {
-    font-size: 1.6rem;
-    color: var(--brand-primary);
-    display: block;
-    margin-bottom: .25rem;
-}
-
-.category-option-card .cat-pick-name {
-    font-size: .75rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    line-height: 1.2;
-}
-
 /* Form step card */
 .form-step-card {
     border: none;
@@ -737,7 +686,6 @@ body {
     .hero-section h1 { font-size: 1.7rem; }
     .auction-card-img, .auction-card .img-wrapper { height: 160px; }
     .auction-card .img-placeholder { height: 160px; }
-    .category-picker { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
     .navbar-search { display: none !important; }
 }
 
