@@ -1,96 +1,211 @@
 {% extends "base.html" %}
 {% load widget_tweaks %}
-{% block title %}Create Auction - BidHub{% endblock %}
+{% block title %}List an Item for Auction – BidHub{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Override hidden category select */
+#id_category { display: none !important; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>Create New Auction</h2>
+        <div class="col-lg-9">
+
+            <!-- Page Header -->
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                     style="width:50px;height:50px;background:linear-gradient(135deg,var(--brand-primary),var(--brand-secondary));">
+                    <i class="bi bi-hammer text-white fs-5"></i>
+                </div>
+                <div>
+                    <h2 class="mb-0 fw-black" style="font-weight:900;">List an Item for Auction</h2>
+                    <p class="text-muted small mb-0">Fill in the details below to start your auction.</p>
+                </div>
+            </div>
+
             <form method="post" enctype="multipart/form-data" id="create-form">
                 {% csrf_token %}
-                <!-- Item Details -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white"><h5 class="mb-0">Item Details</h5></div>
-                    <div class="card-body">
-                        {% for field in item_form %}
+
+                <!-- ── Step 1: Item Details ── -->
+                <div class="form-step-card card">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <span class="step-number">1</span>
+                        <h5 class="mb-0">Item Details</h5>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <!-- Title -->
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-                            {% render_field field class="form-control" %}
-                            {% if field.errors %}<div class="text-danger small">{{ field.errors.0 }}</div>{% endif %}
+                            <label class="form-label fw-semibold">
+                                Item Title <span class="text-danger">*</span>
+                            </label>
+                            {% render_field item_form.title class="form-control" placeholder="e.g. Vintage Rolex Submariner 1965" %}
+                            {% if item_form.title.errors %}<div class="text-danger small mt-1">{{ item_form.title.errors.0 }}</div>{% endif %}
                         </div>
-                        {% endfor %}
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Description <span class="text-danger">*</span>
+                            </label>
+                            {% render_field item_form.description class="form-control" rows="5" placeholder="Describe your item — condition, history, dimensions, any defects…" %}
+                            {% if item_form.description.errors %}<div class="text-danger small mt-1">{{ item_form.description.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <!-- Condition -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Condition <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-3 flex-wrap">
+                                {% for val, label in item_form.condition.field.choices %}
+                                <label class="d-flex align-items-center gap-2 px-3 py-2 border rounded-3 cursor-pointer condition-opt"
+                                       style="cursor:pointer;transition:all .2s;">
+                                    <input type="radio" name="condition" value="{{ val }}"
+                                           {% if item_form.condition.value == val %}checked{% elif not item_form.condition.value and val == 'used' %}checked{% endif %}
+                                           style="accent-color:var(--brand-primary);">
+                                    <span class="fw-semibold small">{{ label }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                            {% if item_form.condition.errors %}<div class="text-danger small mt-1">{{ item_form.condition.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <!-- Hidden category select (value synced by JS) -->
+                        {% render_field item_form.category id="id_category" %}
+                        {% if item_form.category.errors %}<div class="text-danger small mt-1">{{ item_form.category.errors.0 }}</div>{% endif %}
+
+                        <!-- Visual Category Picker -->
+                        <div class="mb-1">
+                            <label class="form-label fw-semibold">
+                                Category <span class="text-danger">*</span>
+                            </label>
+                            <p class="text-muted small mb-3">Choose the category that best describes your item.</p>
+                            <div class="category-picker" id="category-picker">
+                                {% for cat in categories %}
+                                <label class="category-option" data-value="{{ cat.pk }}">
+                                    <input type="radio" name="_cat_visual" value="{{ cat.pk }}"
+                                           {% if item_form.category.value == cat.pk|stringformat:'s' %}checked{% endif %}>
+                                    <div class="category-option-card">
+                                        <i class="bi {{ cat.icon }} cat-pick-icon"></i>
+                                        <div class="cat-pick-name">{{ cat.name }}</div>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- Auction Settings -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white"><h5 class="mb-0">Auction Settings</h5></div>
-                    <div class="card-body">
+                <!-- ── Step 2: Pricing ── -->
+                <div class="form-step-card card">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <span class="step-number">2</span>
+                        <h5 class="mb-0">Pricing</h5>
+                    </div>
+                    <div class="card-body p-4">
                         {% if auction_form.non_field_errors %}
-                        <div class="alert alert-danger">{{ auction_form.non_field_errors }}</div>
+                        <div class="alert alert-danger rounded-3">{{ auction_form.non_field_errors }}</div>
                         {% endif %}
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Start Price *</label>
+                                <label class="form-label fw-semibold">
+                                    Start Price <span class="text-danger">*</span>
+                                </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text bg-light">$</span>
                                     {% render_field auction_form.start_price class="form-control" %}
                                 </div>
+                                <div class="form-text">Opening bid price</div>
                                 {% if auction_form.start_price.errors %}<div class="text-danger small">{{ auction_form.start_price.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Reserve Price
-                                    <span class="text-muted small">(optional)</span>
+                                <label class="form-label fw-semibold">
+                                    Reserve Price
+                                    <span class="text-muted small fw-normal">(optional)</span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    {% render_field auction_form.reserve_price class="form-control" %}
+                                    <span class="input-group-text bg-light">$</span>
+                                    {% render_field auction_form.reserve_price class="form-control" placeholder="0.00" %}
                                 </div>
+                                <div class="form-text">Minimum price you'll accept</div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">Buy Now Price
-                                    <span class="text-muted small">(optional)</span>
+                                <label class="form-label fw-semibold">
+                                    Buy Now Price
+                                    <span class="text-muted small fw-normal">(optional)</span>
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    {% render_field auction_form.buy_now_price class="form-control" %}
+                                    <span class="input-group-text bg-light">$</span>
+                                    {% render_field auction_form.buy_now_price class="form-control" placeholder="0.00" %}
                                 </div>
+                                <div class="form-text">Instant purchase price</div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Step 3: Schedule ── -->
+                <div class="form-step-card card">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <span class="step-number">3</span>
+                        <h5 class="mb-0">Schedule</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Start Time *</label>
+                                <label class="form-label fw-semibold">Start Time <span class="text-danger">*</span></label>
                                 {% render_field auction_form.start_time class="form-control" %}
                                 {% if auction_form.start_time.errors %}<div class="text-danger small">{{ auction_form.start_time.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">End Time *</label>
+                                <label class="form-label fw-semibold">End Time <span class="text-danger">*</span></label>
                                 {% render_field auction_form.end_time class="form-control" %}
                                 {% if auction_form.end_time.errors %}<div class="text-danger small">{{ auction_form.end_time.errors.0 }}</div>{% endif %}
                             </div>
                             <div class="col-12">
-                                <div class="form-check">
+                                <div class="form-check p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
                                     {% render_field auction_form.auto_extend class="form-check-input" %}
-                                    <label class="form-check-label">{{ auction_form.auto_extend.label }}</label>
-                                    <div class="form-text">Extends auction by 5 minutes if a bid is placed in the last 5 minutes.</div>
+                                    <label class="form-check-label fw-semibold">
+                                        <i class="bi bi-clock-history me-1 text-primary"></i>
+                                        {{ auction_form.auto_extend.label }}
+                                    </label>
+                                    <div class="form-text">Extends the auction by 5 minutes if a bid is placed in the last 5 minutes. Prevents last-second sniping.</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Images -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white"><h5 class="mb-0">Images</h5></div>
-                    <div class="card-body">
-                        <input type="file" name="images" class="form-control" multiple accept="image/*">
-                        <div class="form-text">You can select multiple images. The first image will be the primary image.</div>
+                <!-- ── Step 4: Images ── -->
+                <div class="form-step-card card">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <span class="step-number">4</span>
+                        <h5 class="mb-0">Photos</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="border border-dashed rounded-3 p-4 text-center" style="border-style:dashed!important;background:#f8fafc;">
+                            <i class="bi bi-cloud-arrow-up fs-2 text-primary mb-2 d-block"></i>
+                            <p class="text-muted small mb-3">Upload clear photos from multiple angles. The first image will be the primary listing photo.</p>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*" id="image-upload">
+                        </div>
+                        <div id="image-preview" class="d-flex flex-wrap gap-2 mt-3"></div>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-rocket me-2"></i>Create Auction
-                </button>
-                <a href="{% url 'auctions:list' %}" class="btn btn-outline-secondary btn-lg ms-2">Cancel</a>
+                <!-- Submit -->
+                <div class="d-flex gap-3 mt-2">
+                    <button type="submit" class="btn btn-lg px-5 fw-bold text-white"
+                            style="background:linear-gradient(135deg,var(--brand-primary),var(--brand-secondary));border:none;border-radius:28px;box-shadow:0 4px 14px rgba(26,35,126,.35);">
+                        <i class="bi bi-rocket-takeoff me-2"></i>Launch Auction
+                    </button>
+                    <a href="{% url 'auctions:list' %}" class="btn btn-outline-secondary btn-lg" style="border-radius:28px;">
+                        Cancel
+                    </a>
+                </div>
+
             </form>
         </div>
     </div>
@@ -100,16 +215,83 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ── Auto-fill date fields ──
     var now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     var startField = document.querySelector('[name="start_time"]');
-    var endField = document.querySelector('[name="end_time"]');
+    var endField   = document.querySelector('[name="end_time"]');
     if (startField && !startField.value) {
         startField.value = now.toISOString().slice(0,16);
     }
     if (endField && !endField.value) {
         var end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         endField.value = end.toISOString().slice(0,16);
+    }
+
+    // ── Visual category picker ──
+    var catSelect = document.getElementById('id_category');
+    var catRadios = document.querySelectorAll('[name="_cat_visual"]');
+
+    // Sync visual → hidden select
+    catRadios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            catSelect.value = this.value;
+        });
+    });
+
+    // Pre-select based on existing select value
+    if (catSelect.value) {
+        catRadios.forEach(function(r) {
+            if (r.value === catSelect.value) r.checked = true;
+        });
+    } else if (catRadios.length > 0) {
+        // Select first by default
+        catRadios[0].checked = true;
+        catSelect.value = catRadios[0].value;
+    }
+
+    // ── Condition option styling ──
+    document.querySelectorAll('.condition-opt').forEach(function(label) {
+        var radio = label.querySelector('input[type="radio"]');
+        function updateStyle() {
+            if (radio.checked) {
+                label.style.borderColor = 'var(--brand-primary)';
+                label.style.background  = '#e8eaf6';
+                label.style.boxShadow   = '0 0 0 2px rgba(26,35,126,.2)';
+            } else {
+                label.style.borderColor = '';
+                label.style.background  = '';
+                label.style.boxShadow   = '';
+            }
+        }
+        updateStyle();
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.condition-opt').forEach(function(l) {
+                l.style.borderColor = '';
+                l.style.background  = '';
+                l.style.boxShadow   = '';
+            });
+            updateStyle();
+        });
+    });
+
+    // ── Image preview ──
+    var imgInput   = document.getElementById('image-upload');
+    var previewBox = document.getElementById('image-preview');
+    if (imgInput && previewBox) {
+        imgInput.addEventListener('change', function() {
+            previewBox.innerHTML = '';
+            Array.from(this.files).forEach(function(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:.5rem;border:2px solid #e2e8f0;';
+                    previewBox.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
     }
 });
 </script>

@@ -184,6 +184,7 @@ def create_auction(request):
     return render(request, 'auctions/create.html', {
         'item_form': item_form,
         'auction_form': auction_form,
+        'categories': Category.objects.all(),
     })
 
 

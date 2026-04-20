@@ -1,70 +1,115 @@
 {% extends "base.html" %}
 {% load auction_extras %}
-{% block title %}BidHub - Live Auctions{% endblock %}
+{% block title %}BidHub – Live Auctions &amp; Online Bidding{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="hero-section bg-primary text-white py-5 mb-4">
-    <div class="container">
-        <div class="row align-items-center">
+
+<!-- ===== Hero ===== -->
+<div class="hero-section text-white py-5 mb-0">
+    <div class="container py-3">
+        <div class="row align-items-center g-4">
             <div class="col-lg-7">
-                <h1 class="display-5 fw-bold"><i class="bi bi-hammer me-2"></i>Universal Bidding System</h1>
-                <p class="lead">Transparent, fair, and secure online auctions. Bid with confidence.</p>
+                <div class="d-inline-flex align-items-center gap-2 mb-3 px-3 py-1 rounded-pill"
+                     style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.35);">
+                    <span class="badge-live">● LIVE</span>
+                    <span style="font-size:.82rem;">{{ stats.total_active }} auctions happening right now</span>
+                </div>
+                <h1 class="display-5 fw-black mb-3" style="font-weight:900;line-height:1.15;">
+                    Bid Smart.<br>Win Big.
+                </h1>
+                <p class="lead mb-4" style="opacity:.9;max-width:520px;">
+                    Transparent, fair &amp; secure online auctions. English, Dutch, Sealed-Bid — every format covered.
+                </p>
                 <div class="d-flex gap-3 flex-wrap">
-                    <a href="{% url 'auctions:list' %}" class="btn btn-light btn-lg">
-                        <i class="bi bi-grid me-1"></i>Browse Auctions
+                    <a href="{% url 'auctions:list' %}" class="btn btn-lg px-4 fw-bold"
+                       style="background:var(--brand-accent);color:#fff;border:none;border-radius:28px;box-shadow:0 4px 14px rgba(245,158,11,.45);">
+                        <i class="bi bi-grid me-2"></i>Browse Auctions
                     </a>
                     {% if user.is_authenticated %}
-                    <a href="{% url 'auctions:create' %}" class="btn btn-outline-light btn-lg">
-                        <i class="bi bi-plus-circle me-1"></i>Sell an Item
+                    <a href="{% url 'auctions:create' %}" class="btn btn-lg px-4 fw-bold btn-outline-light"
+                       style="border-radius:28px;">
+                        <i class="bi bi-plus-circle me-2"></i>Sell an Item
                     </a>
                     {% else %}
-                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-light btn-lg">
-                        <i class="bi bi-person-plus me-1"></i>Join Free
+                    <a href="{% url 'accounts:register' %}" class="btn btn-lg px-4 fw-bold btn-outline-light"
+                       style="border-radius:28px;">
+                        <i class="bi bi-person-plus me-2"></i>Join Free
                     </a>
                     {% endif %}
                 </div>
             </div>
-            <div class="col-lg-5 text-center d-none d-lg-block">
-                <div class="row text-center g-3 mt-2">
+
+            <!-- Stats -->
+            <div class="col-lg-5">
+                <div class="row g-3">
                     <div class="col-4">
-                        <div class="stat-card bg-white bg-opacity-10 rounded p-3">
-                            <div class="fs-3 fw-bold">{{ stats.total_active }}</div>
-                            <div class="small">Live Auctions</div>
+                        <div class="stat-card p-3 text-center rounded-3">
+                            <div class="stat-number">{{ stats.total_active }}</div>
+                            <div class="stat-label">Live Auctions</div>
                         </div>
                     </div>
                     <div class="col-4">
-                        <div class="stat-card bg-white bg-opacity-10 rounded p-3">
-                            <div class="fs-3 fw-bold">{{ stats.total_ended }}</div>
-                            <div class="small">Completed</div>
+                        <div class="stat-card p-3 text-center rounded-3">
+                            <div class="stat-number">{{ stats.total_ended }}</div>
+                            <div class="stat-label">Completed</div>
                         </div>
                     </div>
                     <div class="col-4">
-                        <div class="stat-card bg-white bg-opacity-10 rounded p-3">
-                            <div class="fs-3 fw-bold">{{ stats.total_categories }}</div>
-                            <div class="small">Categories</div>
+                        <div class="stat-card p-3 text-center rounded-3">
+                            <div class="stat-number">{{ stats.total_categories }}</div>
+                            <div class="stat-label">Categories</div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Trust chips -->
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill small"
+                          style="background:rgba(255,255,255,.12);font-size:.76rem;">
+                        <i class="bi bi-shield-check text-success"></i> Fraud Detection
+                    </span>
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill small"
+                          style="background:rgba(255,255,255,.12);font-size:.76rem;">
+                        <i class="bi bi-robot text-info"></i> Proxy Bidding
+                    </span>
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill small"
+                          style="background:rgba(255,255,255,.12);font-size:.76rem;">
+                        <i class="bi bi-clock-history text-warning"></i> Immutable History
+                    </span>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container">
+<!-- Wave divider -->
+<div style="background:var(--brand-primary);line-height:0;">
+    <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:40px;">
+        <path d="M0,40 C360,0 1080,0 1440,40 L1440,40 L0,40 Z" fill="#f8fafc"/>
+    </svg>
+</div>
+
+<!-- ===== Main Content ===== -->
+<div class="container py-4">
+
     <!-- Categories -->
     {% if categories %}
     <section class="mb-5">
-        <h2 class="section-title mb-3">Browse by Category</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title mb-0">Browse by Category</h2>
+            <a href="{% url 'auctions:list' %}" class="btn btn-sm btn-outline-primary px-3" style="border-radius:20px;">View All</a>
+        </div>
         <div class="row g-3">
             {% for cat in categories %}
-            <div class="col-6 col-md-3 col-lg-2">
-                <a href="{% url 'auctions:list' %}?category={{ cat.slug }}" class="text-decoration-none">
-                    <div class="category-card text-center p-3 border rounded h-100 hover-shadow">
-                        <i class="bi {{ cat.icon }} fs-2 text-primary"></i>
-                        <div class="mt-2 fw-semibold small">{{ cat.name }}</div>
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <a href="{% url 'auctions:list' %}?category={{ cat.slug }}" class="text-decoration-none d-block h-100">
+                    <div class="category-card text-center p-3 h-100">
+                        <div class="cat-icon">
+                            <i class="bi {{ cat.icon }} fs-4 text-primary"></i>
+                        </div>
+                        <div class="fw-semibold small text-dark mt-1">{{ cat.name }}</div>
                         {% if cat.active_count %}
-                        <span class="badge bg-primary rounded-pill">{{ cat.active_count }}</span>
+                        <span class="cat-count mt-1 d-inline-block">{{ cat.active_count }} live</span>
                         {% endif %}
                     </div>
                 </a>
@@ -77,9 +122,11 @@
     <!-- Ending Soon -->
     {% if ending_soon %}
     <section class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="section-title mb-0"><i class="bi bi-clock text-danger me-2"></i>Ending Soon</h2>
-            <a href="{% url 'auctions:list' %}?sort=ending_soon" class="btn btn-sm btn-outline-primary">View All</a>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title mb-0">
+                <i class="bi bi-alarm-fill text-danger me-2"></i>Ending Soon
+            </h2>
+            <a href="{% url 'auctions:list' %}?sort=ending_soon" class="btn btn-sm btn-outline-danger px-3" style="border-radius:20px;">View All</a>
         </div>
         <div class="row g-3">
             {% for auction in ending_soon %}
@@ -94,9 +141,11 @@
     <!-- Featured Auctions -->
     {% if featured %}
     <section class="mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="section-title mb-0"><i class="bi bi-star text-warning me-2"></i>Featured Auctions</h2>
-            <a href="{% url 'auctions:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title mb-0">
+                <i class="bi bi-star-fill text-warning me-2"></i>Featured Auctions
+            </h2>
+            <a href="{% url 'auctions:list' %}" class="btn btn-sm btn-outline-primary px-3" style="border-radius:20px;">View All</a>
         </div>
         <div class="row g-3">
             {% for auction in featured %}
@@ -111,7 +160,9 @@
     <!-- Recently Ended -->
     {% if recently_ended %}
     <section class="mb-5">
-        <h2 class="section-title mb-3"><i class="bi bi-check-circle text-success me-2"></i>Recently Ended</h2>
+        <h2 class="section-title mb-4">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>Recently Sold
+        </h2>
         <div class="row g-3">
             {% for auction in recently_ended %}
             <div class="col-md-6 col-lg-3">
@@ -121,5 +172,47 @@
         </div>
     </section>
     {% endif %}
+
+    <!-- How It Works -->
+    <section class="mb-5 py-4 px-4 rounded-3" style="background:linear-gradient(135deg,#e8eaf6,#e3f2fd);">
+        <h2 class="section-title mb-4 text-center" style="padding-bottom:.6rem;">
+            How BidHub Works
+        </h2>
+        <div class="row g-4 text-center mt-2">
+            <div class="col-md-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                     style="width:60px;height:60px;background:var(--brand-primary);">
+                    <i class="bi bi-search text-white fs-4"></i>
+                </div>
+                <h6 class="fw-bold">1. Discover</h6>
+                <p class="text-muted small mb-0">Browse thousands of live auctions across all categories.</p>
+            </div>
+            <div class="col-md-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                     style="width:60px;height:60px;background:var(--brand-accent);">
+                    <i class="bi bi-hammer text-white fs-4"></i>
+                </div>
+                <h6 class="fw-bold">2. Bid</h6>
+                <p class="text-muted small mb-0">Place bids manually or let our proxy system bid for you.</p>
+            </div>
+            <div class="col-md-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                     style="width:60px;height:60px;background:#22c55e;">
+                    <i class="bi bi-trophy text-white fs-4"></i>
+                </div>
+                <h6 class="fw-bold">3. Win</h6>
+                <p class="text-muted small mb-0">Highest bidder at auction close wins — instantly notified.</p>
+            </div>
+            <div class="col-md-3">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                     style="width:60px;height:60px;background:#8b5cf6;">
+                    <i class="bi bi-box-seam text-white fs-4"></i>
+                </div>
+                <h6 class="fw-bold">4. Collect</h6>
+                <p class="text-muted small mb-0">Arrange delivery with the seller securely through BidHub.</p>
+            </div>
+        </div>
+    </section>
+
 </div>
 {% endblock %}
