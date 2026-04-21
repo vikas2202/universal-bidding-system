@@ -72,7 +72,7 @@
                         {% if item_form.category.errors %}<div class="text-danger small mt-1">{{ item_form.category.errors.0 }}</div>{% endif %}
 
                         <!-- OLX-style Category Picker -->
-                        <div class="mb-1" id="category-section">
+                        <div class="mb-3" id="category-section">
                             <label class="form-label fw-semibold">
                                 Category <span class="text-danger">*</span>
                             </label>
@@ -155,10 +155,27 @@
                     </div>
                 </div>
 
-                <!-- ── Step 2: Pricing ── -->
+                <!-- ── Step 2: Auction Type ── -->
                 <div class="form-step-card card">
                     <div class="card-header d-flex align-items-center gap-2">
                         <span class="step-number">2</span>
+                        <h5 class="mb-0">Auction Type</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Auction Type <span class="text-danger">*</span>
+                            </label>
+                            {% render_field auction_form.auction_type class="form-select" %}
+                            {% if auction_form.auction_type.errors %}<div class="text-danger small mt-1">{{ auction_form.auction_type.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Step 3: Pricing ── -->
+                <div class="form-step-card card">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <span class="step-number">3</span>
                         <h5 class="mb-0">Pricing</h5>
                     </div>
                     <div class="card-body p-4">
@@ -203,10 +220,10 @@
                     </div>
                 </div>
 
-                <!-- ── Step 3: Schedule ── -->
+                <!-- ── Step 4: Schedule ── -->
                 <div class="form-step-card card">
                     <div class="card-header d-flex align-items-center gap-2">
-                        <span class="step-number">3</span>
+                        <span class="step-number">4</span>
                         <h5 class="mb-0">Schedule</h5>
                     </div>
                     <div class="card-body p-4">
@@ -235,10 +252,10 @@
                     </div>
                 </div>
 
-                <!-- ── Step 4: Images ── -->
+                <!-- ── Step 5: Images ── -->
                 <div class="form-step-card card">
                     <div class="card-header d-flex align-items-center gap-2">
-                        <span class="step-number">4</span>
+                        <span class="step-number">5</span>
                         <h5 class="mb-0">Photos</h5>
                     </div>
                     <div class="card-body p-4">
