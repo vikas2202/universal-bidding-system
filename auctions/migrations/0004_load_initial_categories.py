@@ -68,7 +68,6 @@ def load_categories(apps, schema_editor):
         Category.objects.get_or_create(
             slug=data['slug'],
             defaults={
-                'pk': data['pk'],
                 'name': data['name'],
                 'description': data['description'],
                 'icon': data['icon'],
