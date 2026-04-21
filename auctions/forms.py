@@ -27,6 +27,7 @@ class AuctionForm(forms.ModelForm):
     class Meta:
         model = Auction
         fields = (
+            'auction_type',
             'start_price', 'reserve_price', 'buy_now_price',
             'start_time', 'end_time', 'auto_extend',
         )
