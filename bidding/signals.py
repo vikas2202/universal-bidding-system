@@ -24,11 +24,13 @@ def broadcast_bid_update(sender, instance, created, **kwargs):
         "last_bidder": instance.bidder.username,
         "auction_end": auction.end_time.isoformat(),
     }
-    async_to_sync(channel_layer.group_send)(
-        f"auction_{auction.pk}",
-        {
-            "type": "bid_update",
-            "payload": payload,
-        }
-    )
-
+    try:
+        async_to_sync(channel_layer.group_send)(
+            f"auction_{auction.pk}",
+            {
+                "type": "bid_update",
+                "payload": payload,
+            }
+        )
+    except Exception:
+        pass
