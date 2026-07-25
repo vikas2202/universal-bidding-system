@@ -141,3 +141,18 @@ def auction_status_api(request, pk):
         'end_time': auction.end_time.isoformat(),
         'min_next_bid': str(auction.min_next_bid),
     })
+
+
+def auction_time_api(request, pk):
+    auction = get_object_or_404(Auction, pk=pk)
+    return JsonResponse({
+        'seconds_left': auction.time_remaining_seconds(),
+    })
+
+
+def auction_min_bid_api(request, pk):
+    auction = get_object_or_404(Auction, pk=pk)
+    return JsonResponse({
+        'min_bid': float(auction.min_next_bid),
+        'current_price': float(auction.current_price),
+    })

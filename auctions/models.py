@@ -272,12 +272,16 @@ class Auction(models.Model):
             )
 
         if previous_winner and previous_winner != user:
-            Notification.objects.create(
-                user=previous_winner,
-                notification_type='outbid',
-                message=f"You have been outbid on '{self.item.title}'. Current price: ${self.current_price:.2f}",
-                auction=self,
-            )
+            from auctions.tasks import send_outbid_notification
+            try:
+                send_outbid_notification.delay(previous_winner.id, self.id)
+            except Exception:
+                Notification.objects.create(
+                    user=previous_winner,
+                    notification_type='outbid',
+                    message=f"You have been outbid on '{self.item.title}'. Current price: ${self.current_price:.2f}",
+                    auction=self,
+                )
 
             try:
                 proxy = ProxyBid.objects.get(user=previous_winner, auction=self, is_active=True)
@@ -500,12 +504,16 @@ class Auction(models.Model):
         )
 
         if previous_winner and previous_winner != user:
-            Notification.objects.create(
-                user=previous_winner,
-                notification_type='outbid',
-                message=f"You have been outbid on '{self.item.title}'. Current price: ${self.current_price:.2f}",
-                auction=self,
-            )
+            from auctions.tasks import send_outbid_notification
+            try:
+                send_outbid_notification.delay(previous_winner.id, self.id)
+            except Exception:
+                Notification.objects.create(
+                    user=previous_winner,
+                    notification_type='outbid',
+                    message=f"You have been outbid on '{self.item.title}'. Current price: ${self.current_price:.2f}",
+                    auction=self,
+                )
 
 
 class AuctionImage(models.Model):

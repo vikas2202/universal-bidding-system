@@ -2,6 +2,7 @@
 
 // Countdown timer management
 const countdownTimers = {};
+window.auctionRealtimeState = window.auctionRealtimeState || {};
 
 function formatTime(seconds) {
     if (seconds <= 0) return 'Ending...';
@@ -96,7 +97,7 @@ function updateAuctionDisplay(auctionId, data) {
     }
     if (data.end_time) {
         const countdown = document.getElementById('main-countdown');
-        if (countdown) {
+        if (countdown && !window.auctionRealtimeState[auctionId]) {
             countdown.dataset.endTime = data.end_time;
             const oldId = countdown.dataset.countdownId;
             if (oldId && countdownTimers[oldId]) clearInterval(countdownTimers[oldId]);
@@ -111,14 +112,114 @@ function updateAuctionDisplay(auctionId, data) {
         const minBid = Math.max(newMin, parseFloat(data.new_price) + 1.00);
         if (bidInput) {
             bidInput.min = minBid.toFixed(2);
+            bidInput.placeholder = minBid.toFixed(2);
             if (parseFloat(bidInput.value) < minBid) {
                 bidInput.value = minBid.toFixed(2);
             }
         }
         if (proxyInput) {
             proxyInput.min = minBid.toFixed(2);
+            proxyInput.placeholder = minBid.toFixed(2);
+        }
+        const helper = document.getElementById('min-bid-helper');
+        if (helper) {
+            helper.textContent = '$' + minBid.toFixed(2);
         }
     }
+}
+
+function initAuctionDetailRealtime(config) {
+    if (!config || !config.auctionId) return;
+    const auctionId = config.auctionId;
+    const state = {
+        secondsLeft: Number(config.timeRemainingSeconds || 0),
+        wsConnected: false,
+    };
+    window.auctionRealtimeState[auctionId] = state;
+
+    const timerEl = document.getElementById('main-countdown');
+    const bidBtn = document.getElementById('bid-btn');
+    const liveBadge = document.getElementById('live-badge');
+
+    function renderTimer() {
+        if (!timerEl) return;
+        if (state.secondsLeft <= 0) {
+            timerEl.textContent = 'AUCTION ENDED';
+            timerEl.classList.add('text-red-600');
+            if (bidBtn) bidBtn.disabled = true;
+            return;
+        }
+        const h = Math.floor(state.secondsLeft / 3600);
+        const m = Math.floor((state.secondsLeft % 3600) / 60);
+        const s = state.secondsLeft % 60;
+        timerEl.textContent = `${h}h ${m}m ${s}s`;
+        state.secondsLeft -= 1;
+        setTimeout(renderTimer, 1000);
+    }
+    renderTimer();
+
+    async function refreshMinBid() {
+        if (!config.minBidApiUrl) return;
+        try {
+            const res = await fetch(config.minBidApiUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+            const data = await res.json();
+            updateAuctionDisplay(auctionId, {new_price: data.current_price});
+        } catch (_) {}
+    }
+
+    async function resyncTime() {
+        if (!config.timeApiUrl) return;
+        try {
+            const resp = await fetch(config.timeApiUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+            const data = await resp.json();
+            state.secondsLeft = Number(data.seconds_left || 0);
+        } catch (_) {}
+    }
+
+    async function fallbackPoll() {
+        if (!config.statusApiUrl || state.wsConnected) return;
+        try {
+            const res = await fetch(config.statusApiUrl, {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+            const data = await res.json();
+            updateAuctionDisplay(auctionId, {
+                new_price: data.current_price,
+                bid_count: data.bid_count,
+            });
+            state.secondsLeft = Number(data.time_remaining || state.secondsLeft);
+        } catch (_) {}
+    }
+
+    function setLive(isLive) {
+        state.wsConnected = isLive;
+        if (liveBadge) liveBadge.style.display = isLive ? 'inline-block' : 'none';
+    }
+
+    function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const socket = new WebSocket(`${protocol}${window.location.host}${config.websocketPath}`);
+
+        socket.onopen = () => setLive(true);
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'bid_update') {
+                    updateAuctionDisplay(auctionId, {
+                        new_price: data.current_price,
+                        bid_count: data.bid_count,
+                    });
+                    state.secondsLeft = Number(data.time_remaining || state.secondsLeft);
+                }
+            } catch (_) {}
+        };
+        socket.onerror = () => setLive(false);
+        socket.onclose = () => setLive(false);
+    }
+
+    connectWebSocket();
+    refreshMinBid();
+    setInterval(fallbackPoll, 15000);
+    setInterval(refreshMinBid, 15000);
+    setInterval(resyncTime, 300000);
 }
 
 // Toast notifications
@@ -193,12 +294,6 @@ function pollNotifications() {
 document.addEventListener('DOMContentLoaded', function() {
     initCountdowns();
     pollNotifications();
-
-    // Auto-refresh if on auction detail page
-    const mainCountdown = document.getElementById('main-countdown');
-    if (mainCountdown && mainCountdown.dataset.auctionId) {
-        startAutoRefresh(mainCountdown.dataset.auctionId);
-    }
 
     // Load initial notification count
     const badge = document.getElementById('notif-count');

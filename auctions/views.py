@@ -139,6 +139,7 @@ def auction_detail(request, pk):
         'bid_reason': bid_reason,
         'user_has_proxy': user_has_proxy,
         'related': related,
+        'time_remaining_seconds': max(0, int((auction.end_time - timezone.now()).total_seconds())),
     }
     return render(request, 'auctions/detail.html', context)
 
