@@ -110,14 +110,87 @@ Visit **http://127.0.0.1:8000/** to see the application.
 
 ---
 
-## 🐳 Docker Deployment
+## 🌐 Deploy Online (Production)
 
+### Recommended hosting options
+- **Fastest:** Docker on a VPS (AWS Lightsail / DigitalOcean / EC2)
+- **Managed:** Render / Railway / Fly (web + Postgres + Redis as separate services)
+
+### A) VPS deployment with Docker (step-by-step)
+
+1. **Provision server + domain**
+   - Create Ubuntu server
+   - Point your DNS A record to the server IP
+   - Open only ports `80` and `443` in firewall/security group
+
+2. **Install Docker**
 ```bash
-cp .env.example .env
-# Edit .env with your secrets
-
-docker compose -f docker/docker-compose.yml up --build
+sudo apt update
+sudo apt install -y docker.io docker-compose-plugin
+sudo usermod -aG docker $USER
 ```
+
+3. **Clone project and configure env**
+```bash
+git clone <repo-url>
+cd universal-bidding-system
+cp .env.example .env
+```
+Edit `.env` with:
+- Strong `DJANGO_SECRET_KEY`
+- `DJANGO_DEBUG=False`
+- Real `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS`
+
+4. **Start production stack**
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+```
+Services started:
+- `web` (Django + Gunicorn)
+- `worker` (Celery worker)
+- `beat` (Celery scheduler)
+- `db` (PostgreSQL)
+- `redis` (cache/broker)
+- `nginx` (reverse proxy, serves static/media)
+
+5. **First-time setup**
+```bash
+docker compose -f docker/docker-compose.yml exec web python manage.py migrate
+docker compose -f docker/docker-compose.yml exec web python manage.py createsuperuser
+```
+Optional demo data:
+```bash
+docker compose -f docker/docker-compose.yml exec web python manage.py loaddata auctions/fixtures/initial_data.json
+docker compose -f docker/docker-compose.yml exec web python manage.py seed_data
+```
+
+6. **HTTPS**
+- Use Nginx + Certbot on the VPS, or put Cloudflare/Load Balancer in front and terminate TLS there.
+- Set `DJANGO_CSRF_TRUSTED_ORIGINS` to your `https://` domain values.
+
+7. **Validate live behavior**
+- Login, create auction, place bids, verify notifications/fraud pages
+- Confirm Celery is healthy:
+```bash
+docker compose -f docker/docker-compose.yml logs -f worker beat
+```
+- Confirm web/db/redis health:
+```bash
+docker compose -f docker/docker-compose.yml ps
+```
+
+8. **Ongoing operations**
+- Enable automated Postgres backups
+- Back up media volume
+- Add monitoring/alerts and central log collection
+- Deploy via CI/CD on push to `main`
+
+### B) Managed platform notes (Render/Railway/Fly)
+- Use a **web service** for Django/Gunicorn
+- Add managed **PostgreSQL** and **Redis**
+- Add separate **worker** and **beat** services using Celery commands
+- Set environment variables from `.env.example`
+- Run migrations during deploy and create superuser once
 
 ---
 
@@ -134,7 +207,7 @@ universal-bidding-system/
 │   └── tests/               # 25 unit tests for all anti-fraud rules
 ├── fraud_detection/         # Fraud analysis services, FraudFlag, BidderRiskProfile
 ├── notifications/           # In-app notification system
-├── docker/                  # Dockerfile & docker-compose.yml
+├── docker/                  # Dockerfile, docker-compose.yml, nginx.conf
 ├── static/
 │   ├── css/style.css        # Bootstrap 5 customisation
 │   └── js/bidding.js        # Countdown timers, AJAX bidding, auto-refresh
@@ -183,6 +256,19 @@ The test suite (**63 tests**) covers:
 | `DJANGO_SECRET_KEY` | *required in production* | Django secret key |
 | `DJANGO_DEBUG` | `False` | Enable debug mode |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` (in DEBUG) | Comma-separated allowed hosts |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | `` | Comma-separated trusted origins (use `https://...` in production) |
+| `DJANGO_SECURE_SSL_REDIRECT` | `True` (when `DJANGO_DEBUG=False`) | Redirect HTTP to HTTPS |
+| `DJANGO_SECURE_HSTS_SECONDS` | `3600` | HSTS max age |
+| `DB_ENGINE` | `postgresql` (when set) | Database backend selector |
+| `DATABASE_URL` | `` | Optional Postgres URL (takes priority over `POSTGRES_*`) |
+| `POSTGRES_DB` | `bidding_db` | PostgreSQL database name |
+| `POSTGRES_USER` | `bidding_user` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `` | PostgreSQL password |
+| `POSTGRES_HOST` | `db` | PostgreSQL host |
+| `POSTGRES_PORT` | `5432` | PostgreSQL port |
+| `POSTGRES_SSLMODE` | `` | Optional SSL mode for PostgreSQL (`require`, etc.) |
+| `DB_CONN_MAX_AGE` | `60` | Persistent DB connection lifetime (seconds) |
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Redis URL for cache/channels/celery |
 
 ---
 
