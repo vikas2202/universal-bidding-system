@@ -25,6 +25,7 @@ _allowed_hosts = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(',') if h.strip()] or (['localhost', '127.0.0.1'] if DEBUG else [])
 
 INSTALLED_APPS = [
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,6 +51,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'universal_bidding.urls'
+ASGI_APPLICATION = 'universal_bidding.asgi.application'
 
 TEMPLATES = [
     {
@@ -106,3 +108,21 @@ CSRF_COOKIE_HTTPONLY = True
 
 # IP-based rate limiting for bids (max bids per minute per IP)
 BID_RATE_LIMIT = 10
+
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    }
+}
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BEAT_SCHEDULE = {
+    'close-expired-auctions': {
+        'task': 'auctions.tasks.close_expired_auctions',
+        'schedule': 60.0,
+    },
+}

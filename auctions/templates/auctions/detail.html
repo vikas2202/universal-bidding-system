@@ -184,13 +184,12 @@
                     <!-- Timer / Status -->
                     {% if auction.is_active %}
                     <div class="text-center mb-3 p-2 rounded-3" style="background:#fff3cd;border:1px solid #ffc107;">
-                        <div class="small text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
+                        <div class="small text-muted mb-1 d-flex align-items-center justify-content-center gap-2" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
                             <i class="bi bi-alarm me-1"></i>Time Remaining
+                            <span id="live-badge" class="badge bg-success" style="display:none;">LIVE</span>
                         </div>
-                        <div class="countdown-display fw-black text-danger"
-                             id="main-countdown"
-                             data-end-time="{{ auction.end_time.isoformat }}"
-                             data-auction-id="{{ auction.pk }}">
+                        <div class="fw-black text-danger"
+                             id="main-countdown">
                         </div>
                     </div>
                     {% else %}
@@ -258,7 +257,7 @@
                             </div>
                             <div class="form-text">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Minimum bid: <strong>{{ auction.min_next_bid|currency }}</strong>
+                                Minimum bid: <strong id="min-bid-helper">{{ auction.min_next_bid|currency }}</strong>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -379,6 +378,16 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBid(form, {{ auction.pk }});
         });
     }
+
+    initAuctionDetailRealtime({
+        auctionId: {{ auction.pk }},
+        timeRemainingSeconds: {{ time_remaining_seconds }},
+        canBid: {% if can_bid %}true{% else %}false{% endif %},
+        websocketPath: '/ws/auction/{{ auction.pk }}/',
+        statusApiUrl: '/bidding/api/status/{{ auction.pk }}/',
+        timeApiUrl: '/api/auctions/{{ auction.pk }}/time/',
+        minBidApiUrl: '/api/auctions/{{ auction.pk }}/min-bid/'
+    });
 });
 
 // Thumbnail switcher
